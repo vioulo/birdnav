@@ -6,6 +6,7 @@ import { MoonStar, Sun } from "lucide-react";
 import type { ThemeMode } from "@/lib/options";
 
 type ThemeToggleProps = {
+  initialTheme?: ThemeMode;
   redirectTo?: string;
 };
 
@@ -223,17 +224,11 @@ function renderCanvasPhase(
   });
 }
 
-export function ThemeToggle({ redirectTo = "/" }: ThemeToggleProps) {
+export function ThemeToggle({ initialTheme = "dark", redirectTo = "/" }: ThemeToggleProps) {
   const buttonRef = useRef<HTMLButtonElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const transitionIdRef = useRef(0);
-  const [theme, setTheme] = useState<ThemeMode>(() => {
-    if (typeof document === "undefined") {
-      return "dark";
-    }
-
-    return document.documentElement.dataset.theme === "light" ? "light" : "dark";
-  });
+  const [theme, setTheme] = useState<ThemeMode>(initialTheme);
   const [busy, setBusy] = useState(false);
   const [canvasTheme, setCanvasTheme] = useState<ThemeMode | null>(null);
 

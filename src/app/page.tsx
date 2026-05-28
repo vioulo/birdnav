@@ -1,4 +1,5 @@
 import { HomeExperience } from "@/components/home-experience";
+import { SiteFooter } from "@/components/site-footer";
 import {
   getOptionValue,
   isSiteClickBehavior,
@@ -6,6 +7,7 @@ import {
   type SiteClickBehavior,
 } from "@/lib/options";
 import { prisma } from "@/lib/prisma";
+import { getThemeMode } from "@/lib/theme";
 
 type HomeSite = {
   id: number;
@@ -34,11 +36,12 @@ export default async function HomePage({
   const selectedCategory = params.category?.trim() || "all";
   const search = params.q?.trim() || "";
 
-  const [categories, footerText, footerLinksRaw, clickBehaviorRaw]: [
+  const [categories, footerText, footerLinksRaw, clickBehaviorRaw, themeMode]: [
     HomeCategory[],
     string,
     string,
     string,
+    Awaited<ReturnType<typeof getThemeMode>>,
   ] = await Promise.all([
     prisma.category.findMany({
       orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
@@ -63,6 +66,7 @@ export default async function HomePage({
     getOptionValue("footer.copyright"),
     getOptionValue("footer.links"),
     getOptionValue("site.click_behavior", "detail"),
+    getThemeMode(),
   ]);
 
   const clickBehavior: SiteClickBehavior = isSiteClickBehavior(clickBehaviorRaw)
@@ -100,30 +104,11 @@ export default async function HomePage({
         items={allItems}
         initialCategory={selectedCategory}
         initialSearch={search}
+        initialTheme={themeMode}
         totalSites={totalSites}
       />
 
-      <footer className="site-footer">
-        <div className="footer-content">
-          <div className="copyright">
-            {footerText}
-            <br />
-            UNIFIED INTERACTION · DUAL THEME
-          </div>
-          <div className="footer-links">
-            {footerLinks.map((link) => (
-              <a
-                key={`${link.label}-${link.href}`}
-                href={link.href}
-                target="_blank"
-                rel="noreferrer"
-              >
-                {link.label}
-              </a>
-            ))}
-          </div>
-        </div>
-      </footer>
+      <SiteFooter copyright={footerText} links={footerLinks} />
     </div>
   );
 }

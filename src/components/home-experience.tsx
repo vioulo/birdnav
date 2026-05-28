@@ -2,8 +2,9 @@
 
 import { startTransition, useDeferredValue, useState } from "react";
 
+import { SiteHeader } from "@/components/site-header";
 import { SiteGrid } from "@/components/site-grid";
-import { ThemeToggle } from "@/components/theme-toggle";
+import type { ThemeMode } from "@/lib/options";
 
 type HomeExperienceProps = {
   categories: Array<{
@@ -27,6 +28,7 @@ type HomeExperienceProps = {
   }>;
   initialCategory: string;
   initialSearch: string;
+  initialTheme: ThemeMode;
   totalSites: number;
 };
 
@@ -35,6 +37,7 @@ export function HomeExperience({
   items,
   initialCategory,
   initialSearch,
+  initialTheme,
   totalSites,
 }: HomeExperienceProps) {
   const [selectedCategory, setSelectedCategory] = useState(initialCategory);
@@ -58,14 +61,10 @@ export function HomeExperience({
 
   return (
     <>
-      <header className="site-header">
-        <div className="header-brand">
-          <div className="logo">BIRDNAV</div>
-          <div className="header-brand-meta">
-            <span>{categories.length} categories</span>
-            <span>{totalSites} links indexed</span>
-          </div>
-        </div>
+      <SiteHeader
+        meta={[`${categories.length} categories`, `${totalSites} links indexed`]}
+        initialTheme={initialTheme}
+      >
         <div className="search-bar">
           <input
             name="q"
@@ -74,8 +73,7 @@ export function HomeExperience({
             placeholder="Search links, categories, keywords..."
           />
         </div>
-        <ThemeToggle />
-      </header>
+      </SiteHeader>
 
       <main className="site-main">
         <section className="filter-strip">
