@@ -298,59 +298,84 @@ export default async function AdminCategoriesPage({
 
       <AdminFeedback success={successMessage} error={errorMessage} />
 
-      <section className="list-shell">
-        <div className="list-head md:grid-cols-[1.2fr_1fr_120px_120px_120px_220px]">
-          <div>名称</div>
-          <div>Slug</div>
-          <div>颜色</div>
-          <div>排序</div>
-          <div>站点数</div>
-          <div className="text-right">操作</div>
-        </div>
-        <div>
-          {categories.map((category) => (
-            <form
-              key={category.id}
-              action={updateCategory}
-              className="list-row md:grid-cols-[1.2fr_1fr_120px_120px_120px_220px]"
-            >
-              <input type="hidden" name="id" value={category.id} />
-              <input type="hidden" name="page" value={page} />
-              <input className="input" name="name" defaultValue={category.name} required />
-              <input className="input" name="slug" defaultValue={category.slug} />
-              <div className="flex items-center gap-3">
-                <input
-                  className="input h-11"
-                  name="color"
-                  type="color"
-                  defaultValue={category.color}
-                />
-                <span
-                  className="inline-dot"
-                  style={{ color: category.color, backgroundColor: category.color }}
-                />
-              </div>
-              <input
-                className="input"
-                name="sortOrder"
-                type="number"
-                defaultValue={category.sortOrder}
-              />
-              <div className="text-sm text-[var(--color-muted)]">{category._count.sites}</div>
-              <div className="list-actions">
-                <button className="button-secondary" type="submit">
-                  保存
-                </button>
-                <ConfirmSubmitButton
-                  className="button-danger"
-                  formAction={deleteCategory}
-                  confirmMessage={`确认删除分类“${category.name}”？该分类下的站点也会一起删除。`}
-                >
-                  删除
-                </ConfirmSubmitButton>
-              </div>
-            </form>
-          ))}
+      <section className="admin-record-shell">
+        <div className="admin-record-list">
+          {categories.length ? (
+            categories.map((category) => (
+              <details key={category.id} className="admin-record">
+                <summary className="admin-record-summary">
+                  <span
+                    className="admin-category-swatch"
+                    style={{ color: category.color, backgroundColor: category.color }}
+                    aria-hidden="true"
+                  />
+                  <span className="admin-record-main">
+                    <strong>{category.name}</strong>
+                    <span>/{category.slug}</span>
+                  </span>
+                  <span className="admin-record-meta">
+                    <span className="admin-status-pill is-on">
+                      {category._count.sites} sites
+                    </span>
+                    <span>sort {category.sortOrder}</span>
+                    <span>{category.color}</span>
+                  </span>
+                </summary>
+
+                <form action={updateCategory} className="admin-record-editor">
+                  <input type="hidden" name="id" value={category.id} />
+                  <input type="hidden" name="page" value={page} />
+                  <div className="admin-edit-grid">
+                    <label className="admin-field">
+                      <span>分类名称</span>
+                      <input className="input" name="name" defaultValue={category.name} required />
+                    </label>
+                    <label className="admin-field">
+                      <span>Slug</span>
+                      <input className="input" name="slug" defaultValue={category.slug} />
+                    </label>
+                    <label className="admin-field">
+                      <span>分类颜色</span>
+                      <input
+                        className="input h-11"
+                        name="color"
+                        type="color"
+                        defaultValue={category.color}
+                      />
+                    </label>
+                    <label className="admin-field">
+                      <span>排序</span>
+                      <input
+                        className="input"
+                        name="sortOrder"
+                        type="number"
+                        defaultValue={category.sortOrder}
+                      />
+                    </label>
+                  </div>
+                  <div className="admin-record-actions">
+                    <span className="admin-record-hint">
+                      当前分类下有 {category._count.sites} 个站点。
+                    </span>
+                    <div className="list-actions">
+                      <button className="button-secondary" type="submit">
+                        保存
+                      </button>
+                      <ConfirmSubmitButton
+                        className="button-danger"
+                        formAction={deleteCategory}
+                        confirmMessage={`确认删除分类“${category.name}”？该分类下的站点也会一起删除。`}
+                      >
+                        删除
+                      </ConfirmSubmitButton>
+                    </div>
+                  </div>
+                </form>
+              </details>
+            ))
+          ) : (
+            <div className="empty-state">还没有分类，先创建一个分组。</div>
+          )}
         </div>
         <div className="pager">
           <p className="pager-meta">
