@@ -651,8 +651,8 @@ html[data-theme="dark"] .promo-hero:hover {
 }
 
 .link-pill-icon-image {
-  width: 14px;
-  height: 14px;
+  width: 26px;
+  height: 26px;
   object-fit: contain;
   display: block;
 }

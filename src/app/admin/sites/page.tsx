@@ -8,6 +8,7 @@ import { requireAdmin } from "@/lib/auth";
 import { recordAuditLog } from "@/lib/audit";
 import { getActionErrorMessage } from "@/lib/db-errors";
 import { prisma } from "@/lib/prisma";
+import { discoverSiteIconUrl } from "@/lib/site-icon";
 import { parseSiteForm } from "@/lib/validation";
 
 const PAGE_SIZE = 10;
@@ -97,12 +98,14 @@ async function createSite(formData: FormData) {
   let createdSite;
 
   try {
+    const resolvedIconUrl = iconUrl || await discoverSiteIconUrl(url);
+
     createdSite = await prisma.site.create({
       data: {
         catId,
         name,
         url,
-        iconUrl: iconUrl || null,
+        iconUrl: resolvedIconUrl,
         description: description || null,
         featureImage: featureImage || null,
         isFeatured,
@@ -491,7 +494,7 @@ export default async function AdminSitesPage({
               </label>
               <label className="block space-y-2">
                 <span className="text-sm font-medium">站点 Icon</span>
-                <input className="input" name="iconUrl" placeholder="https://.../favicon.ico" />
+                <input className="input" name="iconUrl" placeholder="留空自动获取 favicon" />
               </label>
               <label className="block space-y-2">
                 <span className="text-sm font-medium">简介</span>
