@@ -1,9 +1,42 @@
+import Link from "next/link";
 import { revalidatePath } from "next/cache";
 
 import { AdminShell } from "@/components/admin-shell";
 import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { normalizeUrl } from "@/lib/utils";
+
+const PAGE_SIZE = 10;
+
+type SiteRow = {
+  id: number;
+  catId: number;
+  name: string;
+  url: string;
+  description: string | null;
+  featureImage: string | null;
+  isFeatured: boolean;
+  sortOrder: number;
+  isPublished: boolean;
+  category: {
+    id: number;
+    name: string;
+    color: string;
+  };
+};
+
+type SiteCategory = {
+  id: number;
+  name: string;
+};
+
+function buildSitesHref(page: number) {
+  return page > 1 ? `/admin/sites?page=${page}` : "/admin/sites";
+}
+
+function buildSitesModalHref(page: number) {
+  return `${buildSitesHref(page)}${page > 1 ? "&" : "?"}modal=new`.replace("?&", "?");
+}
 
 async function createSite(formData: FormData) {
   "use server";
@@ -99,163 +132,231 @@ async function deleteSite(formData: FormData) {
   revalidatePath("/");
 }
 
-export default async function AdminSitesPage() {
+export default async function AdminSitesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string; modal?: string }>;
+}) {
   const admin = await requireAdmin();
-  const [categories, sites] = await Promise.all([
+  const params = await searchParams;
+  const page = Math.max(1, Number(params.page || "1") || 1);
+  const isCreateModalOpen = params.modal === "new";
+  const skip = (page - 1) * PAGE_SIZE;
+
+  const [categories, total, sites]: [SiteCategory[], number, SiteRow[]] = await Promise.all([
     prisma.category.findMany({
       orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
+      select: {
+        id: true,
+        name: true,
+      },
     }),
+    prisma.site.count(),
     prisma.site.findMany({
       orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
       include: {
-        category: true,
+        category: {
+          select: {
+            id: true,
+            name: true,
+            color: true,
+          },
+        },
       },
+      skip,
+      take: PAGE_SIZE,
     }),
   ]);
 
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+
   return (
     <AdminShell currentPath="/admin/sites" username={admin.username}>
-      <div className="grid gap-4 lg:grid-cols-[400px_1fr]">
-        <section className="tech-panel h-fit overflow-hidden">
-          <div className="tech-grid border-b border-[var(--color-line)] px-8 py-8">
-            <p className="eyebrow">Sites</p>
-            <h2 className="mt-3 text-3xl font-semibold">新增站点</h2>
-            <p className="mt-3 text-sm leading-7 text-[var(--color-muted)]">
-              为每个分类补充链接、简介和前台是否展示的状态。
-            </p>
-          </div>
-          <form action={createSite} className="space-y-5 px-8 py-8">
-            <label className="block space-y-2">
-              <span className="text-sm font-medium">所属分类</span>
-              <select className="input" name="catId" required defaultValue="">
-                <option value="" disabled>
-                  选择分类
-                </option>
-                {categories.map((category) => (
-                  <option key={category.id} value={category.id}>
-                    {category.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="block space-y-2">
-              <span className="text-sm font-medium">站点名称</span>
-              <input className="input" name="name" placeholder="例如：GitHub" required />
-            </label>
-            <label className="block space-y-2">
-              <span className="text-sm font-medium">链接</span>
-              <input className="input" name="url" placeholder="https://github.com" required />
-            </label>
-            <label className="block space-y-2">
-              <span className="text-sm font-medium">简介</span>
-              <textarea
-                className="input min-h-28 resize-y"
-                name="description"
-                placeholder="一句话说明这个站点是做什么的"
-              />
-            </label>
-            <label className="block space-y-2">
-              <span className="text-sm font-medium">排序</span>
-              <input className="input" name="sortOrder" type="number" defaultValue="0" />
-            </label>
-            <label className="block space-y-2">
-              <span className="text-sm font-medium">推广图片</span>
-              <input className="input" name="featureImage" placeholder="https://..." />
-            </label>
-            <label className="flex items-center gap-3 border border-[var(--color-line)] bg-[rgba(255,255,255,0.02)] px-4 py-3">
-              <input name="isFeatured" type="checkbox" />
-              <span className="text-sm">加入推广区域</span>
-            </label>
-            <label className="flex items-center gap-3 border border-[var(--color-line)] bg-[rgba(255,255,255,0.02)] px-4 py-3">
-              <input name="isPublished" type="checkbox" defaultChecked />
-              <span className="text-sm">前台显示</span>
-            </label>
-            <button className="button-primary w-full" type="submit">
-              保存站点
-            </button>
-          </form>
-        </section>
-        <section className="tech-panel overflow-hidden">
-          <div className="border-b border-[var(--color-line)] px-8 py-8">
-            <h3 className="text-2xl font-semibold">现有站点</h3>
-          </div>
-          <div>
-            {sites.map((site) => (
-              <form
-                key={site.id}
-                action={updateSite}
-                className="table-row space-y-5 px-8 py-8"
-              >
-                <input type="hidden" name="id" value={site.id} />
-                <div className="grid gap-5 xl:grid-cols-2">
-                  <label className="block space-y-2">
-                    <span className="text-sm font-medium">所属分类</span>
-                    <select className="input" name="catId" defaultValue={site.catId}>
-                      {categories.map((category) => (
-                        <option key={category.id} value={category.id}>
-                          {category.name}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label className="block space-y-2">
-                    <span className="text-sm font-medium">站点名称</span>
-                    <input className="input" name="name" defaultValue={site.name} required />
-                  </label>
-                  <label className="block space-y-2 xl:col-span-2">
-                    <span className="text-sm font-medium">链接</span>
-                    <input className="input" name="url" defaultValue={site.url} required />
-                  </label>
-                  <label className="block space-y-2 xl:col-span-2">
-                    <span className="text-sm font-medium">简介</span>
-                    <textarea
-                      className="input min-h-28 resize-y"
-                      name="description"
-                      defaultValue={site.description || ""}
-                    />
-                  </label>
-                  <label className="block space-y-2 xl:col-span-2">
-                    <span className="text-sm font-medium">推广图片</span>
-                    <input
-                      className="input"
-                      name="featureImage"
-                      defaultValue={site.featureImage || ""}
-                    />
-                  </label>
-                  <label className="block space-y-2">
-                    <span className="text-sm font-medium">排序</span>
-                    <input
-                      className="input"
-                      name="sortOrder"
-                      type="number"
-                      defaultValue={site.sortOrder}
-                    />
-                  </label>
-                  <label className="flex items-center gap-3 border border-[var(--color-line)] bg-[rgba(255,255,255,0.02)] px-4 py-3">
-                    <input name="isFeatured" type="checkbox" defaultChecked={site.isFeatured} />
-                    <span className="text-sm">加入推广区域</span>
-                  </label>
-                  <label className="flex items-center gap-3 border border-[var(--color-line)] bg-[rgba(255,255,255,0.02)] px-4 py-3">
-                    <input name="isPublished" type="checkbox" defaultChecked={site.isPublished} />
-                    <span className="text-sm">前台显示</span>
-                  </label>
-                </div>
-                <div className="flex flex-wrap items-center gap-3">
-                  <button className="button-primary" type="submit">
-                    更新
-                  </button>
-                  <button className="button-danger" type="submit" formAction={deleteSite}>
-                    删除
-                  </button>
-                  <span className="text-sm text-[var(--color-muted)]">
-                    当前分类：{site.category.name}
-                  </span>
-                </div>
-              </form>
-            ))}
-          </div>
-        </section>
+      <div className="admin-toolbar">
+        <div>
+          <p className="eyebrow">Sites</p>
+          <h2 className="mt-1 text-2xl font-semibold tracking-tight">站点列表</h2>
+        </div>
+        <div className="admin-toolbar-meta">
+          <span>total {total}</span>
+          <span>page {page}/{totalPages}</span>
+          <Link className="button-primary" href={buildSitesModalHref(page)}>
+            新建站点
+          </Link>
+        </div>
       </div>
+
+      <section className="list-shell">
+        <div className="list-head md:grid-cols-[1.1fr_1fr_100px_100px_110px_180px]">
+          <div>站点</div>
+          <div>分类</div>
+          <div>排序</div>
+          <div>推广</div>
+          <div>发布</div>
+          <div className="text-right">操作</div>
+        </div>
+        <div>
+          {sites.map((site) => (
+            <form
+              key={site.id}
+              action={updateSite}
+              className="list-row md:grid-cols-[1.1fr_1fr_100px_100px_110px_180px]"
+            >
+              <input type="hidden" name="id" value={site.id} />
+              <div className="space-y-2">
+                <input className="input" name="name" defaultValue={site.name} required />
+                <input className="input" name="url" defaultValue={site.url} required />
+                <textarea
+                  className="input min-h-24 resize-y"
+                  name="description"
+                  defaultValue={site.description || ""}
+                />
+                <input
+                  className="input"
+                  name="featureImage"
+                  defaultValue={site.featureImage || ""}
+                  placeholder="推广图片链接"
+                />
+              </div>
+              <div className="space-y-2">
+                <select className="input" name="catId" defaultValue={site.catId}>
+                  {categories.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
+                    </option>
+                  ))}
+                </select>
+                <div className="flex items-center gap-2 text-sm text-[var(--color-muted)]">
+                  <span
+                    className="inline-dot"
+                    style={{
+                      color: site.category.color,
+                      backgroundColor: site.category.color,
+                    }}
+                  />
+                  <span>{site.category.name}</span>
+                </div>
+              </div>
+              <input
+                className="input"
+                name="sortOrder"
+                type="number"
+                defaultValue={site.sortOrder}
+              />
+              <label className="flex items-center gap-2 text-sm">
+                <input name="isFeatured" type="checkbox" defaultChecked={site.isFeatured} />
+                推广
+              </label>
+              <label className="flex items-center gap-2 text-sm">
+                <input name="isPublished" type="checkbox" defaultChecked={site.isPublished} />
+                发布
+              </label>
+              <div className="list-actions">
+                <button className="button-secondary" type="submit">
+                  保存
+                </button>
+                <button className="button-danger" type="submit" formAction={deleteSite}>
+                  删除
+                </button>
+              </div>
+            </form>
+          ))}
+        </div>
+        <div className="pager">
+          <p className="pager-meta">
+            显示 {skip + 1}-{Math.min(skip + PAGE_SIZE, total)} / {total}
+          </p>
+          <div className="pager-links">
+            <Link
+              className="button-secondary"
+              href={page > 1 ? buildSitesHref(page - 1) : buildSitesHref(1)}
+            >
+              上一页
+            </Link>
+            <Link
+              className="button-secondary"
+              href={page < totalPages ? buildSitesHref(page + 1) : buildSitesHref(totalPages)}
+            >
+              下一页
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {isCreateModalOpen ? (
+        <div className="modal-overlay">
+          <div className="modal-card">
+            <div className="modal-header">
+              <div>
+                <p className="eyebrow">Create</p>
+                <h3 className="mt-1 text-xl font-semibold">新建站点</h3>
+              </div>
+              <Link className="button-secondary" href={buildSitesHref(page)}>
+                关闭
+              </Link>
+            </div>
+            <form action={createSite} className="modal-body admin-form-grid">
+              <div className="admin-form-grid-2">
+                <label className="block space-y-2">
+                  <span className="text-sm font-medium">所属分类</span>
+                  <select className="input" name="catId" required defaultValue="">
+                    <option value="" disabled>
+                      选择分类
+                    </option>
+                    {categories.map((category) => (
+                      <option key={category.id} value={category.id}>
+                        {category.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="block space-y-2">
+                  <span className="text-sm font-medium">排序</span>
+                  <input className="input" name="sortOrder" type="number" defaultValue="0" />
+                </label>
+              </div>
+              <label className="block space-y-2">
+                <span className="text-sm font-medium">站点名称</span>
+                <input className="input" name="name" placeholder="例如：GitHub" required />
+              </label>
+              <label className="block space-y-2">
+                <span className="text-sm font-medium">链接</span>
+                <input className="input" name="url" placeholder="https://github.com" required />
+              </label>
+              <label className="block space-y-2">
+                <span className="text-sm font-medium">简介</span>
+                <textarea
+                  className="input min-h-24 resize-y"
+                  name="description"
+                  placeholder="一句话说明这个站点是做什么的"
+                />
+              </label>
+              <label className="block space-y-2">
+                <span className="text-sm font-medium">推广图片</span>
+                <input className="input" name="featureImage" placeholder="https://..." />
+              </label>
+              <div className="flex flex-wrap gap-4">
+                <label className="flex items-center gap-2 text-sm">
+                  <input name="isFeatured" type="checkbox" />
+                  加入推广区域
+                </label>
+                <label className="flex items-center gap-2 text-sm">
+                  <input name="isPublished" type="checkbox" defaultChecked />
+                  前台显示
+                </label>
+              </div>
+              <div className="flex justify-end gap-2">
+                <Link className="button-secondary" href={buildSitesHref(page)}>
+                  取消
+                </Link>
+                <button className="button-primary" type="submit">
+                  保存站点
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      ) : null}
     </AdminShell>
   );
 }
