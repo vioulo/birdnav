@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Retro Nav | Unified Interaction</title>
+    <style>
+        :root {
+            --spacing-unit: 8px;
+            --font-main: "Helvetica Neue", Helvetica, Arial, sans-serif;
+            --font-mono: "Courier New", Courier, monospace;
+
+            /* ☀️ 亮色主题 */
+            --color-bg: #f0f0f0;
+            --color-bg-alt: #dcdcdc;
+            --color-surface: #ffffff;
+            --color-border: #1976d2;
+            --color-text: #111111;
+            --color-text-muted: #666666;
+            --pattern-dot: rgba(0, 0, 0, 0.12);
+
+            /* 交互色 (亮色) */
+            --hover-bg: var(--color-text);
+            --hover-text: var(--color-surface);
+            --hover-shadow: var(--color-border);
+            --active-bg: var(--color-text);
+            --active-text: var(--color-surface);
+
+            --cat-dev: #d32f2f;
+            --cat-design: #1976d2;
+            --cat-tool: #388e3c;
+            --cat-media: #fbc02d;
+        }
+
+        [data-theme="dark"] {
+            /* 🌙 暗色主题 */
+            --color-bg: #0f172a;
+            --color-bg-alt: #020617;
+            --color-surface: rgba(30, 41, 59, 0.75);
+            --color-border: rgba(148, 163, 184, 0.25);
+            --color-text: #e2e8f0;
+            --color-text-muted: #94a3b8;
+            --pattern-dot: rgba(56, 189, 248, 0.08);
+            --blur-strength: 14px;
+
+            /* 交互色 (暗色) - 核心调整区 */
+            --accent: #22d3ee; /* Cyan-400: 比纯蓝更亮，适合暗底 */
+            --hover-bg: rgba(34, 211, 238, 0.08); /* 极淡的青色底 */
+            --hover-text: var(--accent);
+            --hover-shadow: rgba(34, 211, 238, 0.25); /* 发光阴影代替硬黑 */
+            --active-bg: var(--accent); /* 青色实底 */
+            --active-text: #0f172a; /* 深色字，保证对比度 */
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: var(--font-main);
+            color: var(--color-text);
+            line-height: 1.5;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background-color: var(--color-bg);
+            background-image:
+                radial-gradient(circle, var(--pattern-dot) 1px, transparent 1px),
+                linear-gradient(180deg, var(--color-bg) 0%, var(--color-bg-alt) 100%);
+            background-size: 20px 20px, 100% 100%;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        a { text-decoration: none; color: inherit; }
+
+        /* =========================================
+           基础块样式
+           ========================================= */
+        .retro-block {
+            height: 40px;
+            display: inline-flex;
+            align-items: center;
+            padding: 0 16px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            white-space: nowrap;
+            transition: all 0.1s ease; /* 缩短过渡时间，让位移更干脆 */
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+        }
+
+        [data-theme="dark"] .retro-block {
+            backdrop-filter: blur(var(--blur-strength));
+            -webkit-backdrop-filter: blur(var(--blur-strength));
+        }
+
+        /* =========================================
+           Header
+           ========================================= */
+        header {
+            border-bottom: 2px solid var(--color-border);
+            background: var(--color-surface);
+            padding: 12px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        [data-theme="dark"] header {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(var(--blur-strength));
+            -webkit-backdrop-filter: blur(var(--blur-strength));
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        .logo {
+            font-weight: 900;
+            font-size: 1.2rem;
+            letter-spacing: -0.5px;
+            text-transform: uppercase;
+            border: 2px solid var(--color-text);
+            padding: 2px 8px;
+            line-height: 1.2;
+        }
+
+        [data-theme="dark"] .logo {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .search-bar { flex: 1; max-width: 600px; }
+
+        .search-bar input {
+            width: 100%;
+            height: 40px;
+            padding: 0 14px;
+            border: 1px solid var(--color-border);
+            background: var(--color-bg);
+            color: var(--color-text);
+            outline: none;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            transition: all 0.15s;
+        }
+
+        [data-theme="dark"] .search-bar input {
+            background: rgba(255,255,255,0.06);
+        }
+        .search-bar input:focus {
+            border-color: var(--color-text);
+            box-shadow: 3px 3px 0 var(--color-border);
+            transform: translate(-1px, -1px);
+        }
+        [data-theme="dark"] .search-bar input:focus {
+            border-color: var(--accent);
+            box-shadow: 3px 3px 0 var(--hover-shadow);
+        }
+
+        .theme-toggle {
+            cursor: pointer;
+            height: 40px;
+            padding: 0 16px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            background: var(--color-bg);
+            border: 1px solid var(--color-border);
+            color: var(--color-text);
+            display: flex;
+            align-items: center;
+            transition: all 0.1s ease;
+        }
+
+        /* 统一 Toggle 交互 */
+        .theme-toggle:hover {
+            background: var(--hover-bg);
+            color: var(--hover-text);
+            border-color: var(--hover-text);
+            transform: translate(-1px, -1px);
+            box-shadow: 3px 3px 0 var(--hover-shadow);
+        }
+
+        /* =========================================
+           Main Content
+           ========================================= */
+        main {
+            flex: 1;
+            width: 100%;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* --- 分类按钮 --- */
+        .categories {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .cat-btn { cursor: pointer; user-select: none; }
+
+        /* ✅ 统一交互: Hover */
+        .cat-btn:hover {
+            background: var(--hover-bg);
+            color: var(--hover-text);
+            border-color: var(--hover-text);
+            transform: translate(-1px, -1px);
+            box-shadow: 3px 3px 0 var(--hover-shadow);
+        }
+
+        /* ✅ 统一交互: Active */
+        .cat-btn.active {
+            background: var(--active-bg);
+            color: var(--active-text);
+            border-color: var(--active-bg);
+            transform: translate(-1px, -1px);
+            box-shadow: 3px 3px 0 var(--hover-shadow);
+        }
+
+        /* --- 推广区域 --- */
+        .promo-section {
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            padding: 20px 24px;
+            position: relative;
+            box-shadow: 4px 4px 0 var(--color-border);
+        }
+        [data-theme="dark"] .promo-section {
+            backdrop-filter: blur(var(--blur-strength));
+            -webkit-backdrop-filter: blur(var(--blur-strength));
+            box-shadow: 4px 4px 0 var(--hover-shadow);
+        }
+
+        .promo-section h2 { font-size: 1.1rem; margin-bottom: 4px; }
+        [data-theme="dark"] .promo-section h2 { color: var(--accent); }
+        .promo-section p { font-size: 0.85rem; color: var(--color-text-muted); }
+
+        .promo-tag {
+            position: absolute;
+            top: 0; right: 0;
+            background: var(--color-text);
+            color: var(--color-surface);
+            font-size: 0.7rem;
+            padding: 2px 8px;
+            font-weight: bold;
+        }
+        [data-theme="dark"] .promo-tag {
+            background: var(--accent);
+            color: var(--active-text);
+        }
+
+        /* --- 链接网格 --- */
+        .links-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .link-item {
+            height: 40px;
+            display: inline-flex;
+            align-items: center;
+            padding: 0 16px 0 12px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            white-space: nowrap;
+            cursor: pointer;
+            gap: 10px;
+            transition: all 0.1s ease;
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+        }
+
+        [data-theme="dark"] .link-item {
+            backdrop-filter: blur(var(--blur-strength));
+            -webkit-backdrop-filter: blur(var(--blur-strength));
+        }
+
+        /* ✅ 统一 Link Hover */
+        .link-item:hover {
+            background: var(--hover-bg);
+            color: var(--hover-text);
+            border-color: var(--hover-text);
+            transform: translate(-1px, -1px);
+            box-shadow: 3px 3px 0 var(--hover-shadow);
+        }
+
+        /* Hover 时圆点增加描边防止融入背景 */
+        .link-item:hover .dot-indicator {
+            box-shadow: 0 0 0 1px var(--color-surface);
+        }
+        [data-theme="dark"] .link-item:hover .dot-indicator {
+            box-shadow: 0 0 0 1px var(--color-bg);
+        }
+
+        .link-item.hidden { display: none; }
+
+        /* --- 圆点 --- */
+        .dot-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+            cursor: pointer;
+            position: relative;
+            z-index: 2;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+        }
+        .dot-indicator:hover { transform: scale(2.2); }
+
+        .dot-dev { background: var(--cat-dev); }
+        .dot-design { background: var(--cat-design); }
+        .dot-tool { background: var(--cat-tool); }
+        .dot-media { background: var(--cat-media); }
+
+        /* =========================================
+           Footer
+           ========================================= */
+        footer {
+            border-top: 2px solid var(--color-border);
+            background: var(--color-surface);
+            padding: 16px 24px;
+            font-size: 0.75rem;
+            font-family: var(--font-mono);
+        }
+        [data-theme="dark"] footer {
+            backdrop-filter: blur(var(--blur-strength));
+            -webkit-backdrop-filter: blur(var(--blur-strength));
+            border-top: 1px solid var(--color-border);
+        }
+
+        .footer-content {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+        .footer-links { display: flex; flex-wrap: wrap; gap: 6px 16px; }
+
+        .footer-links a {
+            padding: 2px 6px;
+            border: 1px solid transparent;
+            transition: all 0.1s ease;
+        }
+
+        /* ✅ 统一 Footer Hover */
+        .footer-links a:hover {
+            background: var(--hover-bg);
+            color: var(--hover-text);
+            border-color: var(--hover-text);
+            transform: translate(-1px, -1px);
+            box-shadow: 2px 2px 0 var(--hover-shadow);
+        }
+
+        .copyright { opacity: 0.6; }
+
+        @media (max-width: 768px) {
+            header { flex-wrap: wrap; padding: 12px; }
+            .search-bar { order: 3; max-width: 100%; flex-basis: 100%; margin-top: 8px; }
+            main { padding: 12px; }
+            .link-item { flex: 1 1 auto; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo">WEB.NAV</div>
+        <div class="search-bar">
+            <input type="text" id="searchInput" placeholder="SEARCH_KEYWORDS...">
+        </div>
+        <button class="theme-toggle" id="themeToggle">THEME</button>
+    </header>
+
+    <main>
+        <section class="categories" id="categoryContainer">
+            <div class="retro-block cat-btn active" data-cat="all">ALL / 全部</div>
+            <div class="retro-block cat-btn" data-cat="dev">DEV / 开发</div>
+            <div class="retro-block cat-btn" data-cat="design">DESIGN / 设计</div>
+            <div class="retro-block cat-btn" data-cat="tool">TOOL / 工具</div>
+            <div class="retro-block cat-btn" data-cat="media">MEDIA / 资讯</div>
+        </section>
+
+        <section class="promo-section">
+            <span class="promo-tag">A</span>
+            <h2>🚀 开发者效率提升计划 · 探索下一代 Web 构建工具</h2>
+            <p>体验极致编译速度，点击了解详情 →</p>
+        </section>
+
+        <section class="links-grid" id="linksGrid">
+            <a href="#mdn" class="link-item" data-category="dev"><div class="dot-indicator dot-dev" title="筛选: 开发"></div><span>MDN Web Docs</span></a>
+            <a href="#github" class="link-item" data-category="dev"><div class="dot-indicator dot-dev" title="筛选: 开发"></div><span>GitHub</span></a>
+            <a href="#stackoverflow" class="link-item" data-category="dev"><div class="dot-indicator dot-dev" title="筛选: 开发"></div><span>Stack Overflow</span></a>
+            <a href="#v2ex" class="link-item" data-category="dev"><div class="dot-indicator dot-dev" title="筛选: 开发"></div><span>V2EX</span></a>
+            <a href="#juejin" class="link-item" data-category="dev"><div class="dot-indicator dot-dev" title="筛选: 开发"></div><span>掘金</span></a>
+
+            <a href="#dribbble" class="link-item" data-category="design"><div class="dot-indicator dot-design" title="筛选: 设计"></div><span>Dribbble</span></a>
+            <a href="#figma" class="link-item" data-category="design"><div class="dot-indicator dot-design" title="筛选: 设计"></div><span>Figma Community</span></a>
+            <a href="#behance" class="link-item" data-category="design"><div class="dot-indicator dot-design" title="筛选: 设计"></div><span>Behance</span></a>
+            <a href="#awwwards" class="link-item" data-category="design"><div class="dot-indicator dot-design" title="筛选: 设计"></div><span>Awwwards</span></a>
+
+            <a href="#notion" class="link-item" data-category="tool"><div class="dot-indicator dot-tool" title="筛选: 工具"></div><span>Notion</span></a>
+            <a href="#linear" class="link-item" data-category="tool"><div class="dot-indicator dot-tool" title="筛选: 工具"></div><span>Linear</span></a>
+            <a href="#excalidraw" class="link-item" data-category="tool"><div class="dot-indicator dot-tool" title="筛选: 工具"></div><span>Excalidraw</span></a>
+            <a href="#vercel" class="link-item" data-category="tool"><div class="dot-indicator dot-tool" title="筛选: 工具"></div><span>Vercel</span></a>
+
+            <a href="#hackernews" class="link-item" data-category="media"><div class="dot-indicator dot-media" title="筛选: 资讯"></div><span>Hacker News</span></a>
+            <a href="#producthunt" class="link-item" data-category="media"><div class="dot-indicator dot-media" title="筛选: 资讯"></div><span>Product Hunt</span></a>
+            <a href="#techcrunch" class="link-item" data-category="media"><div class="dot-indicator dot-media" title="筛选: 资讯"></div><span>TechCrunch</span></a>
+            <a href="#36kr" class="link-item" data-category="media"><div class="dot-indicator dot-media" title="筛选: 资讯"></div><span>36Kr</span></a>
+        </section>
+    </main>
+
+    <footer>
+        <div class="footer-content">
+            <div class="copyright">
+                &copy; 2026 WEB.NAV SYSTEM.<br>
+                UNIFIED INTERACTION · DUAL THEME
+            </div>
+            <div class="footer-links">
+                <a href="#">关于我们</a>
+                <a href="#">提交收录</a>
+                <a href="#">隐私政策</a>
+                <a href="#">API</a>
+                <a href="#">友链A</a>
+                <a href="#">友链B</a>
+                <a href="#">友链C</a>
+                <a href="#">站点地图</a>
+                <a href="#">RSS</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        const themeToggle = document.getElementById('themeToggle');
+        const htmlEl = document.documentElement;
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        htmlEl.setAttribute('data-theme', savedTheme);
+
+        themeToggle.addEventListener('click', () => {
+            const current = htmlEl.getAttribute('data-theme');
+            const next = current === 'light' ? 'dark' : 'light';
+            htmlEl.setAttribute('data-theme', next);
+            localStorage.setItem('theme', next);
+        });
+
+        const catButtons = document.querySelectorAll('.cat-btn');
+        const linkItems = document.querySelectorAll('.link-item');
+        const dots = document.querySelectorAll('.dot-indicator');
+
+        function filterLinks(category) {
+            catButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.cat === category));
+            linkItems.forEach(item => {
+                item.classList.toggle('hidden', category !== 'all' && item.dataset.category !== category);
+            });
+        }
+
+        catButtons.forEach(btn => btn.addEventListener('click', () => filterLinks(btn.dataset.cat)));
+
+        dots.forEach(dot => {
+            dot.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                filterLinks(dot.closest('.link-item').dataset.category);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+        });
+
+        const searchInput = document.getElementById('searchInput');
+        searchInput.addEventListener('input', (e) => {
+            const term = e.target.value.toLowerCase().trim();
+            if (term.length > 0) {
+                catButtons.forEach(b => b.classList.remove('active'));
+                linkItems.forEach(item => {
+                    const title = item.querySelector('span').textContent.toLowerCase();
+                    item.classList.toggle('hidden', !title.includes(term));
+                });
+            } else {
+                const activeBtn = document.querySelector('.cat-btn.active');
+                filterLinks(activeBtn ? activeBtn.dataset.cat : 'all');
+            }
+        });
+    </script>
+</body>
+</html>
