@@ -1,3 +1,4 @@
+import { AdminPageHeader } from "@/components/admin-page-header";
 import { AdminShell } from "@/components/admin-shell";
 import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -38,16 +39,17 @@ export default async function AdminLogsPage({
 
   return (
     <AdminShell currentPath="/admin/logs" username={admin.username}>
-      <div className="admin-toolbar">
-        <div>
-          <p className="eyebrow">Audit Logs</p>
-          <h2 className="mt-1 text-2xl font-semibold tracking-tight">操作日志</h2>
-        </div>
-        <div className="admin-toolbar-meta">
-          <span>total {total}</span>
-          <span>page {page}/{totalPages}</span>
-        </div>
-      </div>
+      <AdminPageHeader
+        eyebrow="Audit Logs"
+        title="操作日志"
+        description="追踪后台关键变更，方便回看内容和账户操作。"
+        meta={
+          <>
+            <span>total {total}</span>
+            <span>page {page}/{totalPages}</span>
+          </>
+        }
+      />
 
       <section className="list-shell">
         <div className="list-head md:grid-cols-[180px_160px_140px_1fr_120px]">

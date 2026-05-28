@@ -1,6 +1,8 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+import { AdminFeedback } from "@/components/admin-feedback";
+import { AdminPageHeader } from "@/components/admin-page-header";
 import { AdminShell } from "@/components/admin-shell";
 import { requireAdmin } from "@/lib/auth";
 import { recordAuditLog } from "@/lib/audit";
@@ -80,24 +82,15 @@ export default async function AdminOptionsPage({
 
   return (
     <AdminShell currentPath="/admin/options" username={admin.username}>
+      <AdminPageHeader
+        eyebrow="Options"
+        title="基础配置"
+        description="控制首页默认主题、链接点击行为和 footer 文案。"
+      />
+
+      <AdminFeedback success={successMessage} error={errorMessage} />
+
       <section className="tech-panel overflow-hidden">
-        <div className="tech-grid border-b border-[var(--color-line)] px-8 py-8">
-          <p className="eyebrow">Options</p>
-          <h2 className="mt-3 text-3xl font-semibold">基础配置</h2>
-          <p className="mt-3 text-sm leading-7 text-[var(--color-muted)]">
-            控制首页默认主题、链接点击行为和 footer 文案。
-          </p>
-        </div>
-        {successMessage ? (
-          <p className="mx-8 mt-8 border border-[var(--color-accent)] px-4 py-3 text-sm text-[var(--color-ink)]">
-            {successMessage}
-          </p>
-        ) : null}
-        {errorMessage ? (
-          <p className="mx-8 mt-8 border border-[var(--color-danger)] px-4 py-3 text-sm text-[var(--color-danger)]">
-            {errorMessage}
-          </p>
-        ) : null}
         <form action={updateOptions} className="grid gap-4 p-8 lg:grid-cols-2">
           <label className="block space-y-2">
             <span className="text-sm font-medium">默认主题</span>

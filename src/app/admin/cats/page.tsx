@@ -2,6 +2,8 @@ import Link from "next/link";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+import { AdminFeedback } from "@/components/admin-feedback";
+import { AdminPageHeader } from "@/components/admin-page-header";
 import { AdminShell } from "@/components/admin-shell";
 import { ConfirmSubmitButton } from "@/components/confirm-submit-button";
 import { requireAdmin } from "@/lib/auth";
@@ -277,30 +279,24 @@ export default async function AdminCategoriesPage({
 
   return (
     <AdminShell currentPath="/admin/cats" username={admin.username}>
-      <div className="admin-toolbar">
-        <div>
-          <p className="eyebrow">Categories</p>
-          <h2 className="mt-1 text-2xl font-semibold tracking-tight">分类列表</h2>
-        </div>
-        <div className="admin-toolbar-meta">
-          <span>total {total}</span>
-          <span>page {page}/{totalPages}</span>
+      <AdminPageHeader
+        eyebrow="Categories"
+        title="分类列表"
+        description="管理前台筛选入口和链接色块，保持分类数量清晰可控。"
+        meta={
+          <>
+            <span>total {total}</span>
+            <span>page {page}/{totalPages}</span>
+          </>
+        }
+        actions={
           <Link className="button-primary" href={buildCatsModalHref(page)}>
             新建分类
           </Link>
-        </div>
-      </div>
+        }
+      />
 
-      {successMessage ? (
-        <p className="mb-3 border border-[var(--color-accent)] px-4 py-3 text-sm text-[var(--color-ink)]">
-          {successMessage}
-        </p>
-      ) : null}
-      {errorMessage ? (
-        <p className="mb-3 border border-[var(--color-danger)] px-4 py-3 text-sm text-[var(--color-danger)]">
-          {errorMessage}
-        </p>
-      ) : null}
+      <AdminFeedback success={successMessage} error={errorMessage} />
 
       <section className="list-shell">
         <div className="list-head md:grid-cols-[1.2fr_1fr_120px_120px_120px_220px]">

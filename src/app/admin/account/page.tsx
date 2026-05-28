@@ -1,5 +1,7 @@
 import { redirect } from "next/navigation";
 
+import { AdminFeedback } from "@/components/admin-feedback";
+import { AdminPageHeader } from "@/components/admin-page-header";
 import { AdminShell } from "@/components/admin-shell";
 import { changeAdminPassword, requireAdmin } from "@/lib/auth";
 import { recordAuditLog } from "@/lib/audit";
@@ -59,24 +61,15 @@ export default async function AdminAccountPage({
 
   return (
     <AdminShell currentPath="/admin/account" username={admin.username}>
+      <AdminPageHeader
+        eyebrow="Account"
+        title="账户安全"
+        description="定期更换后台密码，避免长期使用初始化密码。"
+      />
+
+      <AdminFeedback success={successMessage} error={errorMessage} />
+
       <section className="tech-panel overflow-hidden">
-        <div className="tech-grid border-b border-[var(--color-line)] px-8 py-8">
-          <p className="eyebrow">Account</p>
-          <h2 className="mt-3 text-3xl font-semibold">账户安全</h2>
-          <p className="mt-3 max-w-2xl text-sm leading-7 text-[var(--color-muted)]">
-            定期更换后台密码，避免长期使用初始化密码。
-          </p>
-        </div>
-        {successMessage ? (
-          <p className="mx-8 mt-8 border border-[var(--color-accent)] px-4 py-3 text-sm text-[var(--color-ink)]">
-            {successMessage}
-          </p>
-        ) : null}
-        {errorMessage ? (
-          <p className="mx-8 mt-8 border border-[var(--color-danger)] px-4 py-3 text-sm text-[var(--color-danger)]">
-            {errorMessage}
-          </p>
-        ) : null}
         <form action={updatePassword} className="grid gap-4 p-8 lg:max-w-2xl">
           <label className="block space-y-2">
             <span className="text-sm font-medium">当前密码</span>

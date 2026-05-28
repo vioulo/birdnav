@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { AdminPageHeader } from "@/components/admin-page-header";
 import { AdminShell } from "@/components/admin-shell";
 import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -26,15 +27,11 @@ export default async function AdminDashboardPage() {
 
   return (
     <AdminShell currentPath="/admin" username={admin.username}>
-      <div className="tech-panel-strong overflow-hidden">
-        <div className="tech-grid border-b border-[var(--color-line)] px-8 py-8">
-          <p className="eyebrow">Overview</p>
-          <h2 className="mt-3 text-3xl font-semibold">导航站概览</h2>
-          <p className="mt-3 max-w-2xl text-sm leading-7 text-[var(--color-muted)]">
-            这里追踪当前导航的规模、分类分布和后台操作入口。
-          </p>
-        </div>
-      </div>
+      <AdminPageHeader
+        eyebrow="Overview"
+        title="导航站概览"
+        description="追踪当前导航的规模、分类分布和后台操作入口。"
+      />
       <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {[
           { label: "管理员", value: userCount },
