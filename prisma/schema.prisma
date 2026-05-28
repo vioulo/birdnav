@@ -1,0 +1,64 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+}
+
+model User {
+  id           Int       @id @default(autoincrement())
+  username     String    @unique @db.VarChar(64)
+  passwordHash String    @map("password_hash") @db.VarChar(255)
+  role         UserRole  @default(ADMIN)
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  @@map("users")
+}
+
+model Category {
+  id        Int      @id @default(autoincrement())
+  name      String   @db.VarChar(120)
+  slug      String   @unique @db.VarChar(160)
+  color     String   @default("#4c6fff") @db.VarChar(20)
+  sortOrder Int      @default(0) @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  sites     Site[]
+
+  @@map("cats")
+}
+
+model Site {
+  id          Int       @id @default(autoincrement())
+  catId       Int       @map("cat_id")
+  name        String    @db.VarChar(160)
+  url         String    @db.VarChar(500)
+  description String?   @db.VarChar(500)
+  isFeatured  Boolean   @default(false) @map("is_featured")
+  featureImage String?  @map("feature_image") @db.VarChar(500)
+  sortOrder   Int       @default(0) @map("sort_order")
+  isPublished Boolean   @default(true) @map("is_published")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  category    Category  @relation(fields: [catId], references: [id], onDelete: Cascade)
+
+  @@index([catId])
+  @@map("sites")
+}
+
+model Option {
+  id        Int      @id @default(autoincrement())
+  optKey    String   @unique @map("opt_key") @db.VarChar(120)
+  optValue  String   @map("opt_value") @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("options")
+}

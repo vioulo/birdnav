@@ -1,0 +1,74 @@
+import { prisma } from "@/lib/prisma";
+
+export const THEME_COOKIE = "birdnav_theme";
+
+export const defaultOptions = {
+  "theme.default": "dark",
+  "site.click_behavior": "detail",
+  "footer.copyright": "© 2026 BirdNav. All rights reserved.",
+  "footer.links": "OpenAI|https://openai.com\nGitHub|https://github.com",
+} as const;
+
+export type SiteClickBehavior = "detail" | "direct";
+export type ThemeMode = "dark" | "light";
+
+export function isThemeMode(value: string): value is ThemeMode {
+  return value === "dark" || value === "light";
+}
+
+export function isSiteClickBehavior(value: string): value is SiteClickBehavior {
+  return value === "detail" || value === "direct";
+}
+
+export async function getOptionsMap() {
+  try {
+    const items = await prisma.option.findMany();
+
+    return items.reduce<Record<string, string>>((acc, item) => {
+      acc[item.optKey] = item.optValue;
+      return acc;
+    }, {});
+  } catch {
+    return {};
+  }
+}
+
+export async function getOptionValue(key: keyof typeof defaultOptions | string, fallback?: string) {
+  try {
+    const option = await prisma.option.findUnique({
+      where: { optKey: key },
+    });
+
+    if (option?.optValue) {
+      return option.optValue;
+    }
+  } catch {
+    return fallback ?? defaultOptions[key as keyof typeof defaultOptions] ?? "";
+  }
+
+  return fallback ?? defaultOptions[key as keyof typeof defaultOptions] ?? "";
+}
+
+export async function upsertOption(optKey: string, optValue: string) {
+  return prisma.option.upsert({
+    where: { optKey },
+    update: { optValue },
+    create: { optKey, optValue },
+  });
+}
+
+export function parseFooterLinks(input: string) {
+  return input
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const [label, href] = line.split("|").map((part) => part.trim());
+
+      return {
+        label: label || href || "",
+        href: href || "#",
+      };
+    })
+    .filter((item) => item.label && item.href);
+}

@@ -1,26 +1,270 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --color-bg: #0f1420;
+  --color-bg-alt: #161d2b;
+  --color-panel: #1a2232;
+  --color-panel-strong: #202a3d;
+  --color-panel-soft: #141c2b;
+  --color-ink: #e8edf7;
+  --color-line: #2f3a4f;
+  --color-line-strong: #485a78;
+  --color-muted: #9da9bf;
+  --color-accent: #6f8dff;
+  --color-accent-strong: #8ca5ff;
+  --color-danger: #c74f74;
+  --color-button-text: #eef2fa;
+  --pattern-dot: rgba(255, 255, 255, 0.06);
+}
+
+html[data-theme="light"] {
+  --color-bg: #f2f0ea;
+  --color-bg-alt: #ebe8e0;
+  --color-panel: #f8f6f1;
+  --color-panel-strong: #f1eee7;
+  --color-panel-soft: #ece8de;
+  --color-ink: #16181d;
+  --color-line: #c6c0b1;
+  --color-line-strong: #8b8576;
+  --color-muted: #615d55;
+  --color-accent: #2754d7;
+  --color-accent-strong: #173caa;
+  --color-danger: #a33958;
+  --color-button-text: #16181d;
+  --pattern-dot: rgba(20, 23, 28, 0.08);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-background: var(--color-bg);
+  --color-foreground: var(--color-ink);
+  --font-sans: var(--font-plex-sans);
+  --font-mono: var(--font-plex-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
+  border-radius: 0 !important;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background:
+    radial-gradient(circle, var(--pattern-dot) 1px, transparent 1px),
+    linear-gradient(180deg, var(--color-bg) 0%, var(--color-bg-alt) 100%);
+  background-size: 12px 12px, auto;
+  color: var(--color-ink);
+  font-family: var(--font-plex-sans), sans-serif;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+a,
+button,
+input,
+select,
+textarea {
+  transition:
+    background-color 140ms ease,
+    color 140ms ease,
+    border-color 140ms ease,
+    transform 180ms ease;
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.tech-panel {
+  border: 1px solid var(--color-line);
+  background: var(--color-panel);
+}
+
+.tech-panel-strong {
+  border: 1px solid var(--color-line-strong);
+  background: var(--color-panel-strong);
+}
+
+.tech-grid {
+  position: relative;
+}
+
+.tech-grid::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--color-line) 65%, transparent) 1px, transparent 1px),
+    linear-gradient(color-mix(in srgb, var(--color-line) 65%, transparent) 1px, transparent 1px);
+  background-size: 14px 14px;
+  opacity: 0.24;
+}
+
+.eyebrow {
+  font-family: var(--font-plex-mono), monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--color-accent);
+}
+
+.status-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: 1px solid var(--color-line);
+  background: var(--color-panel-soft);
+  padding: 0.45rem 0.7rem;
+  font-family: var(--font-plex-mono), monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-ink);
+}
+
+.status-chip::before {
+  content: "";
+  width: 0.45rem;
+  height: 0.45rem;
+  background: var(--color-accent-strong);
+}
+
+.input {
+  width: 100%;
+  border: 1px solid var(--color-line);
+  background: var(--color-panel);
+  padding: 0.8rem 0.9rem;
+  font-size: 0.9rem;
+  line-height: 1.35rem;
+  color: var(--color-ink);
+}
+
+.input::placeholder {
+  color: color-mix(in srgb, var(--color-muted) 78%, transparent);
+}
+
+.input:hover {
+  border-color: var(--color-line-strong);
+}
+
+.input:focus {
+  border-color: var(--color-accent);
+}
+
+.tech-search-wrap {
+  border: 1px solid var(--color-line);
+  background: var(--color-panel-soft);
+  padding: 0 0.75rem;
+}
+
+.tech-search-wrap:focus-within {
+  border-color: var(--color-accent);
+}
+
+.button-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-line-strong);
+  background: var(--color-panel-soft);
+  padding: 0.7rem 1rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--color-button-text);
+}
+
+.button-primary:hover {
+  border-color: var(--color-accent);
+  background: color-mix(in srgb, var(--color-panel-soft) 80%, var(--color-accent) 20%);
+}
+
+.button-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-line);
+  background: var(--color-panel);
+  padding: 0.7rem 1rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--color-ink);
+}
+
+.button-secondary:hover {
+  border-color: var(--color-line-strong);
+  background: var(--color-panel-soft);
+}
+
+.button-danger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid color-mix(in srgb, var(--color-danger) 70%, var(--color-line) 30%);
+  background: color-mix(in srgb, var(--color-danger) 22%, var(--color-panel) 78%);
+  padding: 0.7rem 1rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--color-button-text);
+}
+
+.button-danger:hover {
+  border-color: var(--color-danger);
+}
+
+.metric-card {
+  border: 1px solid var(--color-line);
+  background: var(--color-panel);
+  padding: 1rem;
+}
+
+.table-row {
+  border-top: 1px solid var(--color-line);
+  background: var(--color-panel);
+}
+
+.table-row:hover {
+  background: var(--color-panel-soft);
+}
+
+.dense-section-title {
+  border-bottom: 1px solid var(--color-line);
+  padding-bottom: 0.55rem;
+  font-family: var(--font-plex-mono), monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+
+.dot-link {
+  display: inline-flex;
+  width: 0.7rem;
+  height: 0.7rem;
+  border: 1px solid currentColor;
+  transition:
+    transform 120ms ease,
+    border-color 120ms ease,
+    background-color 120ms ease;
+}
+
+.dot-link:hover {
+  transform: scale(1.45);
+}
+
+.theme-toggle-button {
+  min-width: 64px;
+  font-family: var(--font-plex-mono), monospace;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
 }
