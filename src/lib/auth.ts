@@ -5,9 +5,20 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 
 const SESSION_COOKIE = "birdnav_admin_session";
+const SESSION_MAX_AGE = 60 * 60 * 24 * 7;
 
 function getSessionSecret() {
-  return process.env.SESSION_SECRET || "replace-this-in-production";
+  const secret = process.env.SESSION_SECRET;
+
+  if (secret) {
+    return secret;
+  }
+
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("SESSION_SECRET is required in production.");
+  }
+
+  return "birdnav-dev-session-secret";
 }
 
 function sign(value: string) {
@@ -30,6 +41,20 @@ function verifyToken(token: string) {
   const right = Buffer.from(expected);
 
   if (left.length !== right.length || !timingSafeEqual(left, right)) {
+    return null;
+  }
+
+  const [idText, issuedAtText] = payload.split(":");
+  const id = Number(idText);
+  const issuedAt = Number(issuedAtText);
+
+  if (!id || !issuedAt) {
+    return null;
+  }
+
+  const ageInSeconds = Math.floor((Date.now() - issuedAt) / 1000);
+
+  if (ageInSeconds < 0 || ageInSeconds > SESSION_MAX_AGE) {
     return null;
   }
 
@@ -69,13 +94,13 @@ export async function loginAdmin(username: string, password: string) {
   const cookieStore = await cookies();
   cookieStore.set(
     SESSION_COOKIE,
-    createToken(`${user.id}:${user.username}:${Date.now()}`),
+    createToken(`${user.id}:${Date.now()}:${randomBytes(8).toString("hex")}`),
     {
       httpOnly: true,
       sameSite: "lax",
       secure: process.env.NODE_ENV === "production",
       path: "/",
-      maxAge: 60 * 60 * 24 * 7,
+      maxAge: SESSION_MAX_AGE,
     },
   );
 
@@ -126,4 +151,27 @@ export async function requireAdmin() {
   }
 
   return admin;
+}
+
+export async function changeAdminPassword(params: {
+  userId: number;
+  currentPassword: string;
+  nextPassword: string;
+}) {
+  const user = await prisma.user.findUnique({
+    where: { id: params.userId },
+  });
+
+  if (!user || !verifyPassword(params.currentPassword, user.passwordHash)) {
+    return { ok: false as const, message: "当前密码不正确。" };
+  }
+
+  await prisma.user.update({
+    where: { id: params.userId },
+    data: {
+      passwordHash: hashPassword(params.nextPassword),
+    },
+  });
+
+  return { ok: true as const };
 }

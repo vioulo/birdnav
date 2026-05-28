@@ -1,18 +1,35 @@
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 
 import { AdminShell } from "@/components/admin-shell";
 import { requireAdmin } from "@/lib/auth";
+import { recordAuditLog } from "@/lib/audit";
 import { defaultOptions, getOptionsMap, upsertOption } from "@/lib/options";
+import { parseOptionsForm } from "@/lib/validation";
+
+function buildOptionsFeedbackHref(type: "success" | "error", message: string) {
+  const searchParams = new URLSearchParams();
+  searchParams.set(type, message);
+  return `/admin/options?${searchParams.toString()}`;
+}
 
 async function updateOptions(formData: FormData) {
   "use server";
 
-  await requireAdmin();
+  const admin = await requireAdmin();
 
-  const themeDefault = String(formData.get("theme.default") || "dark");
-  const clickBehavior = String(formData.get("site.click_behavior") || "detail");
-  const footerCopyright = String(formData.get("footer.copyright") || "").trim();
-  const footerLinks = String(formData.get("footer.links") || "").trim();
+  const parsed = parseOptionsForm(formData);
+
+  if (!parsed.success) {
+    redirect(
+      buildOptionsFeedbackHref(
+        "error",
+        parsed.error.issues[0]?.message || "配置内容无效。",
+      ),
+    );
+  }
+
+  const { themeDefault, clickBehavior, footerCopyright, footerLinks } = parsed.data;
 
   await Promise.all([
     upsertOption("theme.default", themeDefault),
@@ -23,11 +40,33 @@ async function updateOptions(formData: FormData) {
 
   revalidatePath("/");
   revalidatePath("/admin/options");
+
+  await recordAuditLog({
+    userId: admin.id,
+    action: "options.update",
+    targetType: "option",
+    summary: "更新基础配置",
+    payload: {
+      themeDefault,
+      clickBehavior,
+      footerCopyright,
+      footerLinksLineCount: footerLinks.split("\n").filter(Boolean).length,
+    },
+  });
+
+  redirect(buildOptionsFeedbackHref("success", "配置保存成功。"));
 }
 
-export default async function AdminOptionsPage() {
+export default async function AdminOptionsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ success?: string; error?: string }>;
+}) {
   const admin = await requireAdmin();
+  const params = await searchParams;
   const storedOptions = await getOptionsMap();
+  const successMessage = params.success?.trim();
+  const errorMessage = params.error?.trim();
   const currentOptions = {
     "theme.default":
       storedOptions["theme.default"] || defaultOptions["theme.default"],
@@ -49,6 +88,16 @@ export default async function AdminOptionsPage() {
             控制首页默认主题、链接点击行为和 footer 文案。
           </p>
         </div>
+        {successMessage ? (
+          <p className="mx-8 mt-8 border border-[var(--color-accent)] px-4 py-3 text-sm text-[var(--color-ink)]">
+            {successMessage}
+          </p>
+        ) : null}
+        {errorMessage ? (
+          <p className="mx-8 mt-8 border border-[var(--color-danger)] px-4 py-3 text-sm text-[var(--color-danger)]">
+            {errorMessage}
+          </p>
+        ) : null}
         <form action={updateOptions} className="grid gap-4 p-8 lg:grid-cols-2">
           <label className="block space-y-2">
             <span className="text-sm font-medium">默认主题</span>

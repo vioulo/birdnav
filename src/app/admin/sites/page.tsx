@@ -1,10 +1,14 @@
 import Link from "next/link";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 
 import { AdminShell } from "@/components/admin-shell";
+import { ConfirmSubmitButton } from "@/components/confirm-submit-button";
 import { requireAdmin } from "@/lib/auth";
+import { recordAuditLog } from "@/lib/audit";
+import { getActionErrorMessage } from "@/lib/db-errors";
 import { prisma } from "@/lib/prisma";
-import { normalizeUrl } from "@/lib/utils";
+import { parseSiteForm } from "@/lib/validation";
 
 const PAGE_SIZE = 10;
 
@@ -13,6 +17,7 @@ type SiteRow = {
   catId: number;
   name: string;
   url: string;
+  iconUrl: string | null;
   description: string | null;
   featureImage: string | null;
   isFeatured: boolean;
@@ -38,109 +43,247 @@ function buildSitesModalHref(page: number) {
   return `${buildSitesHref(page)}${page > 1 ? "&" : "?"}modal=new`.replace("?&", "?");
 }
 
+function buildSitesFeedbackHref(
+  page: number,
+  type: "success" | "error",
+  message: string,
+  modal?: "new",
+) {
+  const searchParams = new URLSearchParams();
+
+  if (page > 1) {
+    searchParams.set("page", String(page));
+  }
+
+  if (modal) {
+    searchParams.set("modal", modal);
+  }
+
+  searchParams.set(type, message);
+  return `/admin/sites?${searchParams.toString()}`;
+}
+
 async function createSite(formData: FormData) {
   "use server";
 
-  await requireAdmin();
+  const admin = await requireAdmin();
 
-  const catId = Number(formData.get("catId"));
-  const name = String(formData.get("name") || "").trim();
-  const url = normalizeUrl(String(formData.get("url") || ""));
-  const description = String(formData.get("description") || "").trim();
-  const featureImage = normalizeUrl(String(formData.get("featureImage") || ""));
-  const isFeatured = formData.get("isFeatured") === "on";
-  const sortOrder = Number(formData.get("sortOrder") || 0);
-  const isPublished = formData.get("isPublished") === "on";
+  const parsed = parseSiteForm(formData);
 
-  if (!catId || !name || !url) {
-    return;
+  if (!parsed.success) {
+    redirect(
+      buildSitesFeedbackHref(
+        1,
+        "error",
+        parsed.error.issues[0]?.message || "站点信息无效。",
+        "new",
+      ),
+    );
   }
 
-  await prisma.site.create({
-    data: {
-      catId,
-      name,
-      url,
-      description: description || null,
-      featureImage: featureImage || null,
-      isFeatured,
-      sortOrder,
-      isPublished,
-    },
-  });
+  const {
+    catId,
+    name,
+    url,
+    iconUrl,
+    description,
+    featureImage,
+    isFeatured,
+    sortOrder,
+    isPublished,
+    page,
+  } = parsed.data;
+
+  let createdSite;
+
+  try {
+    createdSite = await prisma.site.create({
+      data: {
+        catId,
+        name,
+        url,
+        iconUrl: iconUrl || null,
+        description: description || null,
+        featureImage: featureImage || null,
+        isFeatured,
+        sortOrder,
+        isPublished,
+      },
+    });
+  } catch (error) {
+    redirect(
+      buildSitesFeedbackHref(
+        page,
+        "error",
+        getActionErrorMessage(error, "创建站点失败。"),
+        "new",
+      ),
+    );
+  }
 
   revalidatePath("/admin");
   revalidatePath("/admin/sites");
   revalidatePath("/");
+
+  await recordAuditLog({
+    userId: admin.id,
+    action: "site.create",
+    targetType: "site",
+    targetId: createdSite.id,
+    summary: `创建站点 ${createdSite.name}`,
+    payload: {
+      catId: createdSite.catId,
+      isFeatured: createdSite.isFeatured,
+      isPublished: createdSite.isPublished,
+    },
+  });
+
+  redirect(buildSitesFeedbackHref(page, "success", "站点创建成功。"));
 }
 
 async function updateSite(formData: FormData) {
   "use server";
 
-  await requireAdmin();
+  const admin = await requireAdmin();
 
   const id = Number(formData.get("id"));
-  const catId = Number(formData.get("catId"));
-  const name = String(formData.get("name") || "").trim();
-  const url = normalizeUrl(String(formData.get("url") || ""));
-  const description = String(formData.get("description") || "").trim();
-  const featureImage = normalizeUrl(String(formData.get("featureImage") || ""));
-  const isFeatured = formData.get("isFeatured") === "on";
-  const sortOrder = Number(formData.get("sortOrder") || 0);
-  const isPublished = formData.get("isPublished") === "on";
+  const page = Math.max(1, Number(formData.get("page") || 1));
+  const parsed = parseSiteForm(formData);
 
-  if (!id || !catId || !name || !url) {
-    return;
+  if (!id || !parsed.success) {
+    redirect(
+      buildSitesFeedbackHref(
+        page,
+        "error",
+        parsed.success ? "站点不存在。" : parsed.error.issues[0]?.message || "站点信息无效。",
+      ),
+    );
   }
 
-  await prisma.site.update({
-    where: { id },
-    data: {
-      catId,
-      name,
-      url,
-      description: description || null,
-      featureImage: featureImage || null,
-      isFeatured,
-      sortOrder,
-      isPublished,
-    },
-  });
+  const {
+    catId,
+    name,
+    url,
+    iconUrl,
+    description,
+    featureImage,
+    isFeatured,
+    sortOrder,
+    isPublished,
+  } = parsed.data;
+
+  let updatedSite;
+
+  try {
+    updatedSite = await prisma.site.update({
+      where: { id },
+      data: {
+        catId,
+        name,
+        url,
+        iconUrl: iconUrl || null,
+        description: description || null,
+        featureImage: featureImage || null,
+        isFeatured,
+        sortOrder,
+        isPublished,
+      },
+    });
+  } catch (error) {
+    redirect(
+      buildSitesFeedbackHref(
+        page,
+        "error",
+        getActionErrorMessage(error, "保存站点失败。"),
+      ),
+    );
+  }
 
   revalidatePath("/admin");
   revalidatePath("/admin/sites");
   revalidatePath("/");
+
+  await recordAuditLog({
+    userId: admin.id,
+    action: "site.update",
+    targetType: "site",
+    targetId: updatedSite.id,
+    summary: `更新站点 ${updatedSite.name}`,
+    payload: {
+      catId: updatedSite.catId,
+      isFeatured: updatedSite.isFeatured,
+      isPublished: updatedSite.isPublished,
+    },
+  });
+
+  redirect(buildSitesFeedbackHref(page, "success", "站点保存成功。"));
 }
 
 async function deleteSite(formData: FormData) {
   "use server";
 
-  await requireAdmin();
+  const admin = await requireAdmin();
 
   const id = Number(formData.get("id"));
+  const page = Math.max(1, Number(formData.get("page") || 1));
 
   if (!id) {
-    return;
+    redirect(buildSitesFeedbackHref(page, "error", "站点不存在。"));
   }
 
-  await prisma.site.delete({
+  const site = await prisma.site.findUnique({
     where: { id },
   });
+
+  if (!site) {
+    redirect(buildSitesFeedbackHref(page, "error", "站点不存在。"));
+  }
+
+  try {
+    await prisma.site.delete({
+      where: { id },
+    });
+  } catch (error) {
+    redirect(
+      buildSitesFeedbackHref(
+        page,
+        "error",
+        getActionErrorMessage(error, "删除站点失败。"),
+      ),
+    );
+  }
 
   revalidatePath("/admin");
   revalidatePath("/admin/sites");
   revalidatePath("/");
+
+  await recordAuditLog({
+    userId: admin.id,
+    action: "site.delete",
+    targetType: "site",
+    targetId: site.id,
+    summary: `删除站点 ${site.name}`,
+    payload: {
+      catId: site.catId,
+      isFeatured: site.isFeatured,
+      isPublished: site.isPublished,
+    },
+  });
+
+  redirect(buildSitesFeedbackHref(page, "success", "站点删除成功。"));
 }
 
 export default async function AdminSitesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string; modal?: string }>;
+  searchParams: Promise<{ page?: string; modal?: string; success?: string; error?: string }>;
 }) {
   const admin = await requireAdmin();
   const params = await searchParams;
   const page = Math.max(1, Number(params.page || "1") || 1);
   const isCreateModalOpen = params.modal === "new";
+  const successMessage = params.success?.trim();
+  const errorMessage = params.error?.trim();
   const skip = (page - 1) * PAGE_SIZE;
 
   const [categories, total, sites]: [SiteCategory[], number, SiteRow[]] = await Promise.all([
@@ -186,6 +329,17 @@ export default async function AdminSitesPage({
         </div>
       </div>
 
+      {successMessage ? (
+        <p className="mb-3 border border-[var(--color-accent)] px-4 py-3 text-sm text-[var(--color-ink)]">
+          {successMessage}
+        </p>
+      ) : null}
+      {errorMessage ? (
+        <p className="mb-3 border border-[var(--color-danger)] px-4 py-3 text-sm text-[var(--color-danger)]">
+          {errorMessage}
+        </p>
+      ) : null}
+
       <section className="list-shell">
         <div className="list-head md:grid-cols-[1.1fr_1fr_100px_100px_110px_180px]">
           <div>站点</div>
@@ -203,9 +357,16 @@ export default async function AdminSitesPage({
               className="list-row md:grid-cols-[1.1fr_1fr_100px_100px_110px_180px]"
             >
               <input type="hidden" name="id" value={site.id} />
+              <input type="hidden" name="page" value={page} />
               <div className="space-y-2">
                 <input className="input" name="name" defaultValue={site.name} required />
                 <input className="input" name="url" defaultValue={site.url} required />
+                <input
+                  className="input"
+                  name="iconUrl"
+                  defaultValue={site.iconUrl || ""}
+                  placeholder="站点 Icon 链接"
+                />
                 <textarea
                   className="input min-h-24 resize-y"
                   name="description"
@@ -255,9 +416,13 @@ export default async function AdminSitesPage({
                 <button className="button-secondary" type="submit">
                   保存
                 </button>
-                <button className="button-danger" type="submit" formAction={deleteSite}>
+                <ConfirmSubmitButton
+                  className="button-danger"
+                  formAction={deleteSite}
+                  confirmMessage={`确认删除站点“${site.name}”？此操作不可撤销。`}
+                >
                   删除
-                </button>
+                </ConfirmSubmitButton>
               </div>
             </form>
           ))}
@@ -296,6 +461,7 @@ export default async function AdminSitesPage({
               </Link>
             </div>
             <form action={createSite} className="modal-body admin-form-grid">
+              <input type="hidden" name="page" value={page} />
               <div className="admin-form-grid-2">
                 <label className="block space-y-2">
                   <span className="text-sm font-medium">所属分类</span>
@@ -322,6 +488,10 @@ export default async function AdminSitesPage({
               <label className="block space-y-2">
                 <span className="text-sm font-medium">链接</span>
                 <input className="input" name="url" placeholder="https://github.com" required />
+              </label>
+              <label className="block space-y-2">
+                <span className="text-sm font-medium">站点 Icon</span>
+                <input className="input" name="iconUrl" placeholder="https://.../favicon.ico" />
               </label>
               <label className="block space-y-2">
                 <span className="text-sm font-medium">简介</span>

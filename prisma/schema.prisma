@@ -18,6 +18,7 @@ model User {
   role         UserRole  @default(ADMIN)
   createdAt    DateTime  @default(now()) @map("created_at")
   updatedAt    DateTime  @updatedAt @map("updated_at")
+  auditLogs    AuditLog[]
 
   @@map("users")
 }
@@ -40,6 +41,7 @@ model Site {
   catId       Int       @map("cat_id")
   name        String    @db.VarChar(160)
   url         String    @db.VarChar(500)
+  iconUrl     String?   @map("icon_url") @db.VarChar(500)
   description String?   @db.VarChar(500)
   isFeatured  Boolean   @default(false) @map("is_featured")
   featureImage String?  @map("feature_image") @db.VarChar(500)
@@ -61,4 +63,20 @@ model Option {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("options")
+}
+
+model AuditLog {
+  id          Int      @id @default(autoincrement())
+  userId      Int      @map("user_id")
+  action      String   @db.VarChar(120)
+  targetType  String   @map("target_type") @db.VarChar(80)
+  targetId    String?  @map("target_id") @db.VarChar(120)
+  summary     String   @db.VarChar(255)
+  payload     String?  @db.Text
+  createdAt   DateTime @default(now()) @map("created_at")
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([targetType, createdAt])
+  @@map("audit_logs")
 }

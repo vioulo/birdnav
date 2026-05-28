@@ -51,6 +51,13 @@ export default async function SiteDetailPage({
           <section className="tech-panel p-5">
             <p className="dense-section-title">Summary</p>
             <div className="mt-4 space-y-4">
+              {site.featureImage ? (
+                <div
+                  className="detail-hero"
+                  style={{ backgroundImage: `url(${site.featureImage})` }}
+                  aria-hidden="true"
+                />
+              ) : null}
               <div className="flex items-center gap-3">
                 <span
                   className="dot-link"

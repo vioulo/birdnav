@@ -11,6 +11,8 @@ const navItems = [
   { href: "/admin/cats", label: "分类管理" },
   { href: "/admin/sites", label: "站点管理" },
   { href: "/admin/options", label: "基础配置" },
+  { href: "/admin/account", label: "账户安全" },
+  { href: "/admin/logs", label: "操作日志" },
   { href: "/", label: "查看前台" },
 ];
 

@@ -20,7 +20,10 @@ function hashPassword(password: string) {
 
 async function main() {
   const username = process.env.ADMIN_USERNAME || "admin";
-  const password = process.env.ADMIN_PASSWORD || "admin123";
+  const existingAdmin = await prisma.user.findUnique({
+    where: { username },
+  });
+  const password = process.env.ADMIN_PASSWORD || randomBytes(9).toString("base64url");
 
   await prisma.user.upsert({
     where: { username },
@@ -33,6 +36,16 @@ async function main() {
       role: UserRole.ADMIN,
     },
   });
+
+  if (!existingAdmin) {
+    console.info(`Created admin user "${username}".`);
+
+    if (process.env.ADMIN_PASSWORD) {
+      console.info("Admin password was loaded from ADMIN_PASSWORD.");
+    } else {
+      console.info(`Generated admin password: ${password}`);
+    }
+  }
 
   const categories = [
     { name: "AI Tools", slug: "ai-tools", color: "#5b8cff", sortOrder: 1 },
