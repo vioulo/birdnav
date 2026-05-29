@@ -1,0 +1,16 @@
+.git
+.next
+.agents
+.codex
+node_modules
+coverage
+out
+build
+*.log
+*.pem
+*.tsbuildinfo
+next-env.d.ts
+.env
+.env.*
+Dockerfile
+docker-compose.yml

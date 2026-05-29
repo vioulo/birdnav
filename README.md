@@ -1,29 +1,6 @@
 # BirdNav
 
-BirdNav 是一个基于 Next.js 16、React 19、Prisma 和 MySQL 的导航站项目，包含前台展示与后台管理。
-
-## 当前整改清单
-
-已完成：
-
-- 移除后台登录页中的默认账号密码回显
-- 为后台会话切换为服务端 session，并在改密后使旧会话失效
-- 为后台登录增加限流与失败审计
-- 为站点图标自动抓取增加公网限制，并改为显式开启
-- 将后台分类、站点、配置表单补充为服务端校验
-- 为后台新增成功/失败反馈消息
-- 为删除分类、删除站点增加确认操作
-- 移除 `next/font/google` 构建期外网依赖，避免受限网络构建失败
-- 种子脚本首次创建管理员时改为随机密码或读取环境变量
-- 修复主题切换跳转参数的安全问题，避免开放跳转
-- 增加管理员修改密码页面
-- 增加后台操作审计日志
-
-建议后续继续做：
-
-- 增加真正的密码重置流程
-- 增加测试覆盖，优先覆盖认证与后台表单
-- 完善前台卡片信息和推广区展示能力
+BirdNav 是一个基于 Next.js、Prisma 和 MySQL 的导航站项目，包含前台展示、主题切换、站点详情、申请收录和后台管理。
 
 ## 技术栈
 
@@ -35,107 +12,74 @@ BirdNav 是一个基于 Next.js 16、React 19、Prisma 和 MySQL 的导航站项
 - Zod
 - Bun
 
-## 本地开发
+## 配置
 
-1. 安装依赖：
-
-```bash
-bun install
-```
-
-2. 配置环境变量，至少包含：
+复制 `.env.example` 并按环境修改：
 
 ```bash
 DATABASE_URL="mysql://user:password@127.0.0.1:3306/birdnav"
 ADMIN_USERNAME="admin"
-ADMIN_PASSWORD="change-me"
+# ADMIN_PASSWORD="replace-with-a-strong-password"
 ```
 
-3. 生成 Prisma Client：
+说明：
+
+- `DATABASE_URL` 是必须配置的数据库连接。
+- `ADMIN_USERNAME` 用于首次初始化管理员账号，默认可用 `admin`。
+- `ADMIN_PASSWORD` 只在 `db:seed` 首次创建管理员时使用；不设置时会生成随机密码并输出到日志。
+
+## 本地运行
 
 ```bash
+bun install
 bun run db:generate
-```
-
-4. 初始化或更新数据库结构：
-
-```bash
 bun run db:migrate
-```
-
-如果你当前是一个已经通过 `db push` 跑起来的旧库，请先阅读下面的“迁移说明”。
-
-5. 初始化数据：
-
-```bash
 bun run db:seed
-```
-
-如果没有设置 `ADMIN_PASSWORD`，种子脚本在首次创建管理员时会输出一条随机密码。
-
-6. 启动开发环境：
-
-```bash
 bun run dev
 ```
 
-## 可用脚本
+后台入口：
+
+```text
+/admin/login
+```
+
+## 部署
+
+生产环境建议使用 Prisma migration：
 
 ```bash
-bun run dev
+bun run db:migrate:deploy
+bun run db:seed
 bun run build
 bun run start
-bun run lint
-bun run db:generate
-bun run db:migrate
-bun run db:migrate:deploy
-bun run db:migrate:status
-bun run db:push
-bun run db:seed
 ```
 
-## 后台说明
+站点图标自动抓取仅支持公网 `80/443` 站点。
 
-- 后台入口：`/admin/login`
-- 所有后台写操作都在服务端再次做管理员校验
-- 登录失败与限流事件也会进入审计日志
-- 分类删除会级联删除该分类下的站点，请谨慎操作
-- 账户安全页：`/admin/account`
-- 操作日志页：`/admin/logs`
+## Docker 部署
 
-## 迁移说明
-
-项目现在已经切换到 Prisma migration 工作流，基线迁移文件位于：
-
-- `prisma/migrations/20260528143000_init_baseline/migration.sql`
-
-推荐用法：
-
-- 本地开发改 schema：`bun run db:migrate -- --name <migration_name>`
-- 生产环境部署迁移：`bun run db:migrate:deploy`
-- 查看迁移状态：`bun run db:migrate:status`
-
-兼容说明：
-
-- `bun run db:push` 仍然保留，只建议在临时原型阶段或修复本地实验库时使用
-- 对于已经存在、且过去通过 `db push` 创建的数据库，不要直接执行 `prisma migrate dev` 让 Prisma 重置库
-- 正确做法是先将基线迁移标记为已应用，再继续增量迁移
-
-如果你要把当前存量库纳入 migration 管理，建议顺序如下：
+项目提供 `Dockerfile` 和 `docker-compose.yml`。管理员初始账号不写入镜像，部署时通过环境变量传入：
 
 ```bash
-bun run db:generate
-prisma migrate resolve --applied 20260528143000_init_baseline
-bun run db:migrate:status
+ADMIN_USERNAME=admin \
+ADMIN_PASSWORD='replace-with-a-strong-password' \
+MYSQL_PASSWORD='replace-with-db-password' \
+MYSQL_ROOT_PASSWORD='replace-with-root-password' \
+docker compose up -d --build
 ```
 
-完成这一步后，后续 schema 变更就可以通过新的 migration 文件持续演进。
+容器启动时默认执行：
 
-## 构建说明
+- `bun run db:migrate:deploy`
+- `bun run db:seed`
+- `bun run start`
 
-项目已移除 Google Fonts 构建依赖，受限网络环境下也应能完成 `build`。当前字体通过系统字体栈回退实现。
+使用外部数据库时：
 
-## 部署注意
-
-- 建议单独配置正式数据库账号，不要复用本地数据库
-- 站点图标自动抓取默认关闭，如需开启，仅支持公网 80/443 站点
+```bash
+DATABASE_URL='mysql://user:password@host:3306/birdnav' \
+RUN_MIGRATIONS=false \
+RUN_SEED=false \
+docker compose up -d --build app
+```

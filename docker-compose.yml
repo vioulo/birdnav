@@ -1,0 +1,39 @@
+services:
+  db:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-birdnav}
+      MYSQL_USER: ${MYSQL_USER:-birdnav}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-birdnav}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-birdnav_root}
+    volumes:
+      - birdnav-mysql:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u$${MYSQL_USER} -p$${MYSQL_PASSWORD} --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build:
+      context: .
+      args:
+        DATABASE_URL: mysql://${MYSQL_USER:-birdnav}:${MYSQL_PASSWORD:-birdnav}@db:3306/${MYSQL_DATABASE:-birdnav}
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: mysql://${MYSQL_USER:-birdnav}:${MYSQL_PASSWORD:-birdnav}@db:3306/${MYSQL_DATABASE:-birdnav}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+      RUN_MIGRATIONS: ${RUN_MIGRATIONS:-true}
+      RUN_SEED: ${RUN_SEED:-true}
+      PORT: 3000
+      HOSTNAME: 0.0.0.0
+    ports:
+      - "${APP_PORT:-3000}:3000"
+
+volumes:
+  birdnav-mysql:
