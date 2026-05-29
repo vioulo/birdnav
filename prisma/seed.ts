@@ -57,6 +57,8 @@ async function main() {
     { name: "Default", slug: "default", color: "#5b8cff", sortOrder: 1 },
     { name: "Development", slug: "development", color: "#17a673", sortOrder: 2 },
     { name: "Design", slug: "design", color: "#c86b1f", sortOrder: 3 },
+    { name: "论坛", slug: "bbs", color: "#c86b5f", sortOrder: 4 },
+    { name: "个人博客", slug: "blogs", color: "#4c3fe1", sortOrder: 5 },
   ];
 
   for (const category of categories) {

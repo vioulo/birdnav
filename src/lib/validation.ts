@@ -79,6 +79,18 @@ export const siteSchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
 });
 
+export const publicSiteApplySchema = z.object({
+  catId: z.coerce.number().int("请选择分类。").positive("请选择分类。"),
+  name: z.string().trim().min(1, "站点名称不能为空。").max(160, "站点名称过长。"),
+  url: z
+    .string()
+    .trim()
+    .url("请输入合法链接。")
+    .refine((value) => httpUrlPattern.test(value), "仅支持 http 或 https 链接。"),
+  iconUrl: optionalHttpUrl.or(z.literal("")),
+  description: z.string().trim().max(500, "简介不能超过 500 字。").optional().or(z.literal("")),
+});
+
 export const optionsSchema = z.object({
   siteTitle: z.string().trim().min(1, "站点标题不能为空。").max(80, "站点标题过长。"),
   siteSubtitle: z.string().trim().max(160, "站点副标题过长。"),
@@ -171,6 +183,19 @@ export function parseSiteForm(formData: FormData) {
     sortOrder: formData.get("sortOrder"),
     isPublished: formData.get("isPublished") === "on",
     page: formData.get("page"),
+  });
+}
+
+export function parsePublicSiteApply(input: Record<string, unknown>) {
+  const url = normalizeUrl(String(input.url ?? ""));
+  const iconUrl = normalizeUrl(String(input.iconUrl ?? ""));
+
+  return publicSiteApplySchema.safeParse({
+    catId: input.catId,
+    name: input.name,
+    url,
+    iconUrl,
+    description: input.description,
   });
 }
 

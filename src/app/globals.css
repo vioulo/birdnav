@@ -359,6 +359,10 @@ textarea:focus-visible {
   color: var(--color-ink);
 }
 
+.site-apply-trigger {
+  white-space: nowrap;
+}
+
 .site-header {
   position: sticky;
   top: 0;
@@ -466,6 +470,41 @@ html[data-theme="dark"] .search-bar input {
 .search-bar input:focus {
   border-color: var(--color-line-strong);
   transform: translate(-1px, -1px);
+}
+
+.site-apply-card {
+  width: min(100%, 620px);
+}
+
+.site-apply-close {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+}
+
+.site-apply-close svg,
+.site-apply-card .button-primary svg {
+  width: 16px;
+  height: 16px;
+}
+
+.site-apply-card .button-primary {
+  gap: 8px;
+}
+
+.site-apply-status {
+  border: 1px solid currentColor;
+  padding: 10px 12px;
+  font-size: 0.86rem;
+  line-height: 1.5;
+}
+
+.site-apply-status.is-success {
+  color: var(--color-accent-strong);
+}
+
+.site-apply-status.is-error {
+  color: var(--color-danger);
 }
 
 .site-main {
@@ -1638,6 +1677,10 @@ html[data-theme="dark"] .detail-button.is-primary:hover {
   }
 
   .site-header-actions {
+    order: 2;
+  }
+
+  .site-apply-trigger {
     order: 2;
   }
 

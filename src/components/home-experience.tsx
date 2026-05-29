@@ -3,6 +3,7 @@
 import { startTransition, useDeferredValue, useState } from "react";
 
 import { SiteHeader } from "@/components/site-header";
+import { SiteApplyDialog } from "@/components/site-apply-dialog";
 import { SiteGrid } from "@/components/site-grid";
 import type { ThemeMode } from "@/lib/options";
 
@@ -76,6 +77,12 @@ export function HomeExperience({
             placeholder="Search links, categories, keywords..."
           />
         </div>
+        <SiteApplyDialog
+          categories={categories.map((category) => ({
+            id: category.id,
+            name: category.name,
+          }))}
+        />
       </SiteHeader>
 
       <main className="site-main">
