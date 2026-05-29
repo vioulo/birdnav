@@ -7,6 +7,10 @@ const prisma = new PrismaClient();
 const defaultOptions = {
   "site.title": "BIRDNAV",
   "site.subtitle": "Curated links for focused browsing.",
+  "site.description": "A sharp-edged navigation site for curated links and focused browsing.",
+  "site.keywords": "navigation, links, bookmarks, BirdNav",
+  "site.url": "",
+  "site.og_image": "",
   "site.click_behavior": "detail",
   "footer.copyright": "© 2026 BirdNav. All rights reserved.",
   "footer.links": "OpenAI|https://openai.com\nGitHub|https://github.com",

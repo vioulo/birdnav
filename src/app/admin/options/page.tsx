@@ -31,11 +31,25 @@ async function updateOptions(formData: FormData) {
     );
   }
 
-  const { siteTitle, siteSubtitle, clickBehavior, footerCopyright, footerLinks } = parsed.data;
+  const {
+    siteTitle,
+    siteSubtitle,
+    siteDescription,
+    siteKeywords,
+    siteUrl,
+    siteOgImage,
+    clickBehavior,
+    footerCopyright,
+    footerLinks,
+  } = parsed.data;
 
   await Promise.all([
     upsertOption("site.title", siteTitle || defaultOptions["site.title"]),
     upsertOption("site.subtitle", siteSubtitle || defaultOptions["site.subtitle"]),
+    upsertOption("site.description", siteDescription || defaultOptions["site.description"]),
+    upsertOption("site.keywords", siteKeywords),
+    upsertOption("site.url", siteUrl || ""),
+    upsertOption("site.og_image", siteOgImage || ""),
     upsertOption("site.click_behavior", clickBehavior),
     upsertOption("footer.copyright", footerCopyright || defaultOptions["footer.copyright"]),
     upsertOption("footer.links", footerLinks || defaultOptions["footer.links"]),
@@ -52,6 +66,10 @@ async function updateOptions(formData: FormData) {
     payload: {
       siteTitle,
       siteSubtitle,
+      siteDescription,
+      siteKeywords,
+      siteUrl,
+      hasOgImage: !!siteOgImage,
       clickBehavior,
       footerCopyright,
       footerLinksLineCount: footerLinks.split("\n").filter(Boolean).length,
@@ -76,6 +94,14 @@ export default async function AdminOptionsPage({
       storedOptions["site.title"] || defaultOptions["site.title"],
     "site.subtitle":
       storedOptions["site.subtitle"] || defaultOptions["site.subtitle"],
+    "site.description":
+      storedOptions["site.description"] || defaultOptions["site.description"],
+    "site.keywords":
+      storedOptions["site.keywords"] || defaultOptions["site.keywords"],
+    "site.url":
+      storedOptions["site.url"] || defaultOptions["site.url"],
+    "site.og_image":
+      storedOptions["site.og_image"] || defaultOptions["site.og_image"],
     "site.click_behavior":
       storedOptions["site.click_behavior"] || defaultOptions["site.click_behavior"],
     "footer.copyright":
@@ -94,6 +120,7 @@ export default async function AdminOptionsPage({
         meta={
           <>
             <span>{currentOptions["site.title"]}</span>
+            <span>SEO ready</span>
             <span>click {currentOptions["site.click_behavior"]}</span>
             <span>{footerLinks.length} footer links</span>
           </>
@@ -126,6 +153,53 @@ export default async function AdminOptionsPage({
                 className="input"
                 name="site.subtitle"
                 defaultValue={currentOptions["site.subtitle"]}
+              />
+            </label>
+          </div>
+        </section>
+
+        <section className="admin-settings-panel">
+          <div className="admin-board-head">
+            <div>
+              <p className="eyebrow">SEO</p>
+              <h3>搜索与分享</h3>
+            </div>
+            <span className="admin-settings-hint">用于 metadata / Open Graph</span>
+          </div>
+          <div className="admin-settings-grid">
+            <label className="admin-field lg:col-span-2">
+              <span>SEO 描述</span>
+              <textarea
+                className="input min-h-24 resize-y"
+                name="site.description"
+                defaultValue={currentOptions["site.description"]}
+              />
+            </label>
+            <label className="admin-field lg:col-span-2">
+              <span>SEO 关键词</span>
+              <input
+                className="input"
+                name="site.keywords"
+                defaultValue={currentOptions["site.keywords"]}
+              />
+              <small className="admin-settings-note">用英文逗号或中文逗号分隔</small>
+            </label>
+            <label className="admin-field">
+              <span>站点公开地址</span>
+              <input
+                className="input"
+                name="site.url"
+                placeholder="https://example.com"
+                defaultValue={currentOptions["site.url"]}
+              />
+            </label>
+            <label className="admin-field">
+              <span>分享封面图</span>
+              <input
+                className="input"
+                name="site.og_image"
+                placeholder="https://example.com/og.jpg"
+                defaultValue={currentOptions["site.og_image"]}
               />
             </label>
           </div>
