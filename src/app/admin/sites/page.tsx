@@ -15,6 +15,8 @@ import { discoverSiteIconUrl } from "@/lib/site-icon";
 import { parseSiteForm } from "@/lib/validation";
 
 const PAGE_SIZE = 10;
+const BULK_IMPORT_LIMIT = 100;
+const BULK_IMPORT_ICON_CONCURRENCY = 8;
 
 type SiteRow = {
   id: number;
@@ -69,11 +71,26 @@ function buildSitesModalHref(page: number, keyword = "") {
   return `/admin/sites?${searchParams.toString()}`;
 }
 
+function buildSitesBulkModalHref(page: number, keyword = "") {
+  const searchParams = new URLSearchParams();
+
+  if (page > 1) {
+    searchParams.set("page", String(page));
+  }
+
+  if (keyword) {
+    searchParams.set("q", keyword);
+  }
+
+  searchParams.set("modal", "bulk");
+  return `/admin/sites?${searchParams.toString()}`;
+}
+
 function buildSitesFeedbackHref(
   page: number,
   type: "success" | "error",
   message: string,
-  modal?: "new",
+  modal?: "new" | "bulk",
   keyword = "",
 ) {
   const searchParams = new URLSearchParams();
@@ -92,6 +109,102 @@ function buildSitesFeedbackHref(
 
   searchParams.set(type, message);
   return `/admin/sites?${searchParams.toString()}`;
+}
+
+function normalizeImportUrl(input: string) {
+  const trimmed = input.trim();
+
+  if (!trimmed) {
+    return "";
+  }
+
+  return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+}
+
+function inferSiteName(url: string) {
+  try {
+    const hostname = new URL(url).hostname.replace(/^www\./i, "");
+    const [label] = hostname.split(".");
+
+    return label
+      ? label
+          .split(/[-_]/)
+          .filter(Boolean)
+          .map((part) => `${part.slice(0, 1).toUpperCase()}${part.slice(1)}`)
+          .join(" ")
+      : hostname;
+  } catch {
+    return url;
+  }
+}
+
+function parseBulkSiteLine(line: string) {
+  const normalized = line.trim();
+
+  if (!normalized) {
+    return null;
+  }
+
+  const [namePart, urlPart] = normalized.includes("|")
+    ? normalized.split("|", 2).map((part) => part.trim())
+    : ["", normalized];
+  const url = normalizeImportUrl(urlPart || namePart);
+
+  try {
+    const parsedUrl = new URL(url);
+
+    if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") {
+      return null;
+    }
+
+    parsedUrl.hash = "";
+    const normalizedUrl =
+      parsedUrl.pathname === "/" && !parsedUrl.search ? parsedUrl.origin : parsedUrl.toString();
+
+    return {
+      name: (urlPart ? namePart : "") || inferSiteName(normalizedUrl),
+      url: normalizedUrl,
+    };
+  } catch {
+    return null;
+  }
+}
+
+function getImportUrlLookupVariants(url: string) {
+  try {
+    const parsedUrl = new URL(url);
+
+    if (parsedUrl.pathname === "/" && !parsedUrl.search) {
+      return [parsedUrl.origin, `${parsedUrl.origin}/`];
+    }
+  } catch {
+    // Fall back to exact matching for malformed values already filtered elsewhere.
+  }
+
+  return [url];
+}
+
+async function mapWithConcurrency<T, R>(
+  items: T[],
+  limit: number,
+  mapper: (item: T, index: number) => Promise<R>,
+) {
+  const results = new Array<R>(items.length);
+  let nextIndex = 0;
+
+  async function worker() {
+    while (nextIndex < items.length) {
+      const currentIndex = nextIndex;
+      nextIndex += 1;
+      results[currentIndex] = await mapper(items[currentIndex], currentIndex);
+    }
+  }
+
+  await Promise.all(
+    Array.from({ length: Math.min(limit, items.length) }, () => worker()),
+  );
+
+  return results;
 }
 
 async function createSite(formData: FormData) {
@@ -176,6 +289,175 @@ async function createSite(formData: FormData) {
   });
 
   redirect(buildSitesFeedbackHref(page, "success", "站点创建成功。", undefined, keyword));
+}
+
+async function bulkImportSites(formData: FormData) {
+  "use server";
+
+  const admin = await requireAdmin();
+  const page = Math.max(1, Number(formData.get("page") || 1));
+  const keyword = String(formData.get("q") || "").trim();
+  const catId = Number(formData.get("catId"));
+  const rawLinks = String(formData.get("links") || "");
+  const isPublished = formData.get("isPublished") === "on";
+
+  if (!catId) {
+    redirect(buildSitesFeedbackHref(page, "error", "请选择批量导入分类。", "bulk", keyword));
+  }
+
+  const category = await prisma.category.findUnique({
+    where: { id: catId },
+    select: { id: true, name: true },
+  });
+
+  if (!category) {
+    redirect(buildSitesFeedbackHref(page, "error", "分类不存在。", "bulk", keyword));
+  }
+
+  const lines = rawLinks
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  if (!lines.length) {
+    redirect(buildSitesFeedbackHref(page, "error", "请至少粘贴 1 个链接。", "bulk", keyword));
+  }
+
+  if (lines.length > BULK_IMPORT_LIMIT) {
+    redirect(
+      buildSitesFeedbackHref(
+        page,
+        "error",
+        `一次最多导入 ${BULK_IMPORT_LIMIT} 个链接。`,
+        "bulk",
+        keyword,
+      ),
+    );
+  }
+
+  const parsedSites = lines
+    .map(parseBulkSiteLine)
+    .filter((site): site is { name: string; url: string } => !!site);
+  const uniqueSites = Array.from(
+    new Map(parsedSites.map((site) => [site.url, site])).values(),
+  );
+
+  if (!uniqueSites.length) {
+    redirect(buildSitesFeedbackHref(page, "error", "没有解析到合法链接。", "bulk", keyword));
+  }
+
+  const existingSites = await prisma.site.findMany({
+    where: {
+      url: {
+        in: Array.from(
+          new Set(uniqueSites.flatMap((site) => getImportUrlLookupVariants(site.url))),
+        ),
+      },
+    },
+    select: { url: true },
+  });
+  const existingUrls = new Set(existingSites.map((site) => site.url));
+  const sitesToCreate = uniqueSites.filter(
+    (site) => !getImportUrlLookupVariants(site.url).some((url) => existingUrls.has(url)),
+  );
+
+  if (!sitesToCreate.length) {
+    redirect(
+      buildSitesFeedbackHref(
+        page,
+        "success",
+        `没有新增站点，已跳过 ${uniqueSites.length} 个重复链接。`,
+        undefined,
+        keyword,
+      ),
+    );
+  }
+
+  let preparedSites: Array<{ name: string; url: string; iconUrl: string | null }>;
+
+  try {
+    preparedSites = await mapWithConcurrency(
+      sitesToCreate,
+      BULK_IMPORT_ICON_CONCURRENCY,
+      async (site) => ({
+        ...site,
+        iconUrl: await discoverSiteIconUrl(site.url),
+      }),
+    );
+  } catch (error) {
+    redirect(
+      buildSitesFeedbackHref(
+        page,
+        "error",
+        getActionErrorMessage(error, "批量获取图标失败。"),
+        "bulk",
+        keyword,
+      ),
+    );
+  }
+
+  let createdCount = 0;
+
+  try {
+    const created = await prisma.site.createMany({
+      data: preparedSites.map((site) => ({
+        catId,
+        name: site.name.slice(0, 160),
+        url: site.url,
+        iconUrl: site.iconUrl,
+        isPublished,
+      })),
+      skipDuplicates: true,
+    });
+
+    createdCount = created.count;
+  } catch (error) {
+    redirect(
+      buildSitesFeedbackHref(
+        page,
+        "error",
+        getActionErrorMessage(error, "批量导入站点失败。"),
+        "bulk",
+        keyword,
+      ),
+    );
+  }
+
+  revalidatePath("/admin");
+  revalidatePath("/admin/sites");
+  revalidatePath("/");
+
+  const duplicateCount = uniqueSites.length - sitesToCreate.length;
+  const invalidCount = lines.length - parsedSites.length;
+  const skippedAfterCreateCount = sitesToCreate.length - createdCount;
+  const failedCount = invalidCount + skippedAfterCreateCount;
+
+  await recordAuditLog({
+    userId: admin.id,
+    action: "site.bulk_import",
+    targetType: "site",
+    summary: `批量导入站点 ${createdCount} 个`,
+    payload: {
+      catId,
+      categoryName: category.name,
+      requestedCount: lines.length,
+      parsedCount: uniqueSites.length,
+      createdCount,
+      duplicateCount,
+      failedCount,
+      isPublished,
+    },
+  });
+
+  redirect(
+    buildSitesFeedbackHref(
+      page,
+      "success",
+      `批量导入完成：新增 ${createdCount} 个，跳过重复 ${duplicateCount} 个，失败 ${failedCount} 个。`,
+      undefined,
+      keyword,
+    ),
+  );
 }
 
 async function updateSite(formData: FormData) {
@@ -335,6 +617,7 @@ export default async function AdminSitesPage({
   const params = await searchParams;
   const page = Math.max(1, Number(params.page || "1") || 1);
   const isCreateModalOpen = params.modal === "new";
+  const isBulkModalOpen = params.modal === "bulk";
   const successMessage = params.success?.trim();
   const errorMessage = params.error?.trim();
   const keyword = params.q?.trim() || "";
@@ -393,9 +676,14 @@ export default async function AdminSitesPage({
           </>
         }
         actions={
-          <Link className="button-primary" href={buildSitesModalHref(page, keyword)}>
-            新建站点
-          </Link>
+          <div className="list-actions">
+            <Link className="button-secondary" href={buildSitesBulkModalHref(page, keyword)}>
+              批量导入
+            </Link>
+            <Link className="button-primary" href={buildSitesModalHref(page, keyword)}>
+              新建站点
+            </Link>
+          </div>
         }
       />
 
@@ -658,6 +946,65 @@ export default async function AdminSitesPage({
                 </Link>
                 <button className="button-primary" type="submit">
                   保存站点
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      ) : null}
+
+      {isBulkModalOpen ? (
+        <div className="modal-overlay">
+          <div className="modal-card">
+            <div className="modal-header">
+              <div>
+                <p className="eyebrow">Bulk Import</p>
+                <h3 className="mt-1 text-xl font-semibold">批量导入站点</h3>
+              </div>
+              <Link className="button-secondary" href={buildSitesHref(page, keyword)}>
+                关闭
+              </Link>
+            </div>
+            <form action={bulkImportSites} className="modal-body admin-form-grid">
+              <input type="hidden" name="page" value={page} />
+              <input type="hidden" name="q" value={keyword} />
+              <div className="admin-form-grid-2">
+                <label className="block space-y-2">
+                  <span className="text-sm font-medium">所属分类</span>
+                  <select className="input" name="catId" required defaultValue="">
+                    <option value="" disabled>
+                      选择分类
+                    </option>
+                    {categories.map((category) => (
+                      <option key={category.id} value={category.id}>
+                        {category.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="flex items-center gap-2 self-end text-sm">
+                  <input name="isPublished" type="checkbox" defaultChecked />
+                  前台显示
+                </label>
+              </div>
+              <label className="block space-y-2">
+                <span className="text-sm font-medium">链接列表</span>
+                <textarea
+                  className="input min-h-72 resize-y"
+                  name="links"
+                  placeholder={`每行一个链接，最多 ${BULK_IMPORT_LIMIT} 个\nhttps://github.com\nOpenAI|https://openai.com`}
+                  required
+                />
+              </label>
+              <p className="admin-record-hint">
+                支持纯链接或 名称|链接。纯链接会自动用域名生成名称，并尝试抓取站点 icon。
+              </p>
+              <div className="flex justify-end gap-2">
+                <Link className="button-secondary" href={buildSitesHref(page, keyword)}>
+                  取消
+                </Link>
+                <button className="button-primary" type="submit">
+                  开始导入
                 </button>
               </div>
             </form>
