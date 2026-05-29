@@ -35,40 +35,47 @@ export function SiteHeader({
   return (
     <header className="site-header">
       <Link className="header-brand" href="/">
-        <div className="logo">{title}</div>
-        <div className="header-brand-meta">
-          {meta.map((item) => (
-            <span key={item}>{item}</span>
-          ))}
+        <div className="logo" aria-hidden="true">
+          😹
+        </div>
+        <div className="header-brand-text">
+          <div className="header-brand-title">{title}</div>
+          <div className="header-brand-meta">
+            {meta.map((item) => (
+              <span key={item}>{item}</span>
+            ))}
+          </div>
         </div>
       </Link>
-      {children}
-      <div className="site-header-actions">
-        {actions?.map((action) =>
-          action.external ? (
-            <a
-              key={`${action.label}-${action.href}`}
-              className={`header-action-link ${action.strong ? "is-strong" : ""}`}
-              href={action.href}
-              target="_blank"
-              rel="noreferrer"
-            >
-              {action.label}
-            </a>
-          ) : (
-            <Link
-              key={`${action.label}-${action.href}`}
-              className={`header-action-link ${action.strong ? "is-strong" : ""}`}
-              href={action.href}
-            >
-              {action.label}
-            </Link>
-          ),
-        )}
-        <Link className="header-action-link" href="/v1">
-          V1
-        </Link>
-        {themeToggle}
+      <div className="site-header-right">
+        {children}
+        <div className="site-header-actions">
+          {actions?.map((action) =>
+            action.external ? (
+              <a
+                key={`${action.label}-${action.href}`}
+                className={`header-action-link ${action.strong ? "is-strong" : ""}`}
+                href={action.href}
+                target="_blank"
+                rel="noreferrer"
+              >
+                {action.label}
+              </a>
+            ) : (
+              <Link
+                key={`${action.label}-${action.href}`}
+                className={`header-action-link ${action.strong ? "is-strong" : ""}`}
+                href={action.href}
+              >
+                {action.label}
+              </Link>
+            ),
+          )}
+          <Link className="header-action-link" href="/v1">
+            V1
+          </Link>
+          {themeToggle}
+        </div>
       </div>
     </header>
   );

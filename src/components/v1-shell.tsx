@@ -60,7 +60,7 @@ export function V1Shell({
         <div className="v1-topbar-inner">
           <Link className="v1-brand" href="/v1">
             <span className="v1-brand-icon" aria-hidden="true">
-              B
+              😹
             </span>
             <span className="v1-brand-text">
               <span className="v1-brand-title">{siteTitle}</span>
