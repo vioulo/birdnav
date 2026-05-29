@@ -3,7 +3,11 @@ import Link from "next/link";
 import { AdminPageHeader } from "@/components/admin-page-header";
 import { AdminShell } from "@/components/admin-shell";
 import { requireAdmin } from "@/lib/auth";
+import { appVersion } from "@/lib/app-version";
 import { prisma } from "@/lib/prisma";
+
+const RECENT_ACTIVITY_LIMIT = 5;
+const OVERVIEW_CATEGORY_LIMIT = 10;
 
 export default async function AdminDashboardPage() {
   const admin = await requireAdmin();
@@ -31,6 +35,7 @@ export default async function AdminDashboardPage() {
             },
           },
         },
+        take: OVERVIEW_CATEGORY_LIMIT,
       }),
       prisma.auditLog.findMany({
         orderBy: { createdAt: "desc" },
@@ -40,9 +45,10 @@ export default async function AdminDashboardPage() {
           summary: true,
           createdAt: true,
         },
-        take: 5,
+        take: RECENT_ACTIVITY_LIMIT,
       }),
     ]);
+  const hiddenCategoryCount = Math.max(0, categoryCount - categories.length);
   const hiddenCount = siteCount - publishedCount;
   const maxCategorySites = Math.max(
     1,
@@ -127,6 +133,11 @@ export default async function AdminDashboardPage() {
             ) : (
               <div className="empty-state">还没有分类数据。</div>
             )}
+            {hiddenCategoryCount > 0 ? (
+              <div className="empty-state">
+                仅显示前 {OVERVIEW_CATEGORY_LIMIT} 条，其余 {hiddenCategoryCount} 条已省略。
+              </div>
+            ) : null}
           </div>
         </section>
 
@@ -181,6 +192,8 @@ export default async function AdminDashboardPage() {
           </section>
         </aside>
       </div>
+
+      <p className="admin-overview-version">{appVersion}</p>
     </AdminShell>
   );
 }

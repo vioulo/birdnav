@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 
-import { getOptionValue, isThemeMode, THEME_COOKIE, type ThemeMode } from "@/lib/options";
+import { isThemeMode, THEME_COOKIE, type ThemeMode } from "@/lib/options";
 
 export async function getThemeMode(): Promise<ThemeMode> {
   const cookieStore = await cookies();
@@ -9,10 +9,7 @@ export async function getThemeMode(): Promise<ThemeMode> {
   if (cookieTheme && isThemeMode(cookieTheme)) {
     return cookieTheme;
   }
-
-  const defaultTheme = await getOptionValue("theme.default", "dark");
-
-  return isThemeMode(defaultTheme) ? defaultTheme : "dark";
+  return "dark";
 }
 
 export function getNextThemeMode(current: ThemeMode): ThemeMode {

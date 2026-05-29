@@ -31,10 +31,9 @@ async function updateOptions(formData: FormData) {
     );
   }
 
-  const { themeDefault, clickBehavior, footerCopyright, footerLinks } = parsed.data;
+  const { clickBehavior, footerCopyright, footerLinks } = parsed.data;
 
   await Promise.all([
-    upsertOption("theme.default", themeDefault),
     upsertOption("site.click_behavior", clickBehavior),
     upsertOption("footer.copyright", footerCopyright || defaultOptions["footer.copyright"]),
     upsertOption("footer.links", footerLinks || defaultOptions["footer.links"]),
@@ -49,7 +48,6 @@ async function updateOptions(formData: FormData) {
     targetType: "option",
     summary: "更新基础配置",
     payload: {
-      themeDefault,
       clickBehavior,
       footerCopyright,
       footerLinksLineCount: footerLinks.split("\n").filter(Boolean).length,
@@ -70,8 +68,6 @@ export default async function AdminOptionsPage({
   const successMessage = params.success?.trim();
   const errorMessage = params.error?.trim();
   const currentOptions = {
-    "theme.default":
-      storedOptions["theme.default"] || defaultOptions["theme.default"],
     "site.click_behavior":
       storedOptions["site.click_behavior"] || defaultOptions["site.click_behavior"],
     "footer.copyright":
@@ -86,10 +82,9 @@ export default async function AdminOptionsPage({
       <AdminPageHeader
         eyebrow="Options"
         title="基础配置"
-        description="控制首页默认主题、链接点击行为和 footer 文案。"
+        description="控制链接点击行为和 footer 文案。"
         meta={
           <>
-            <span>theme {currentOptions["theme.default"]}</span>
             <span>click {currentOptions["site.click_behavior"]}</span>
             <span>{footerLinks.length} footer links</span>
           </>
@@ -108,17 +103,6 @@ export default async function AdminOptionsPage({
             <span className="admin-settings-hint">影响前台默认体验</span>
           </div>
           <div className="admin-settings-grid">
-            <label className="admin-field">
-              <span>默认主题</span>
-              <select
-                className="input"
-                name="theme.default"
-                defaultValue={currentOptions["theme.default"]}
-              >
-                <option value="dark">Dark</option>
-                <option value="light">Light</option>
-              </select>
-            </label>
             <label className="admin-field">
               <span>站点点击行为</span>
               <select

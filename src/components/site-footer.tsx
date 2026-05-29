@@ -1,3 +1,5 @@
+import { appVersion } from "@/lib/app-version";
+
 type SiteFooterProps = {
   copyright: string;
   links: Array<{
@@ -18,7 +20,7 @@ export function SiteFooter({
         <div className="copyright">
           {copyright}
           <br />
-          {meta}
+          {meta} · {appVersion}
         </div>
         <div className="footer-links">
           {links.map((link) => (

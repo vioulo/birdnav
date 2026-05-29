@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { isSiteClickBehavior, isThemeMode } from "@/lib/options";
+import { isSiteClickBehavior } from "@/lib/options";
 import { normalizeUrl } from "@/lib/utils";
 
 const colorHexPattern = /^#([0-9a-f]{6})$/i;
@@ -80,7 +80,6 @@ export const siteSchema = z.object({
 });
 
 export const optionsSchema = z.object({
-  themeDefault: z.string().refine(isThemeMode, "默认主题无效。"),
   clickBehavior: z.string().refine(isSiteClickBehavior, "站点点击行为无效。"),
   footerCopyright: z
     .string()
@@ -170,7 +169,6 @@ export function parseSiteForm(formData: FormData) {
 
 export function parseOptionsForm(formData: FormData) {
   return optionsSchema.safeParse({
-    themeDefault: formData.get("theme.default"),
     clickBehavior: formData.get("site.click_behavior"),
     footerCopyright: formData.get("footer.copyright"),
     footerLinks: formData.get("footer.links"),

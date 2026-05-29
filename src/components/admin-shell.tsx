@@ -1,5 +1,8 @@
 import Link from "next/link";
 
+import { ThemeToggle } from "@/components/theme-toggle";
+import { getThemeMode } from "@/lib/theme";
+
 type AdminShellProps = {
   currentPath: string;
   username: string;
@@ -16,11 +19,13 @@ const navItems = [
   { href: "/", label: "查看前台", external: true },
 ];
 
-export function AdminShell({
+export async function AdminShell({
   currentPath,
   username,
   children,
 }: AdminShellProps) {
+  const initialTheme = await getThemeMode();
+
   return (
     <div className="admin-shell">
       <div className="admin-shell-grid">
@@ -31,7 +36,10 @@ export function AdminShell({
             <p className="admin-sidebar-desc">
               以更平滑的直线视觉管理你的分类、站点与展示状态。
             </p>
-            <span className="status-chip">admin / {username}</span>
+            <div className="admin-sidebar-meta">
+              <span className="status-chip">admin / {username}</span>
+              <ThemeToggle initialTheme={initialTheme} redirectTo={currentPath} />
+            </div>
           </div>
           <nav className="admin-nav">
             {navItems.map((item) => {
