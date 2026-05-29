@@ -31,9 +31,11 @@ async function updateOptions(formData: FormData) {
     );
   }
 
-  const { clickBehavior, footerCopyright, footerLinks } = parsed.data;
+  const { siteTitle, siteSubtitle, clickBehavior, footerCopyright, footerLinks } = parsed.data;
 
   await Promise.all([
+    upsertOption("site.title", siteTitle || defaultOptions["site.title"]),
+    upsertOption("site.subtitle", siteSubtitle || defaultOptions["site.subtitle"]),
     upsertOption("site.click_behavior", clickBehavior),
     upsertOption("footer.copyright", footerCopyright || defaultOptions["footer.copyright"]),
     upsertOption("footer.links", footerLinks || defaultOptions["footer.links"]),
@@ -48,6 +50,8 @@ async function updateOptions(formData: FormData) {
     targetType: "option",
     summary: "更新基础配置",
     payload: {
+      siteTitle,
+      siteSubtitle,
       clickBehavior,
       footerCopyright,
       footerLinksLineCount: footerLinks.split("\n").filter(Boolean).length,
@@ -68,6 +72,10 @@ export default async function AdminOptionsPage({
   const successMessage = params.success?.trim();
   const errorMessage = params.error?.trim();
   const currentOptions = {
+    "site.title":
+      storedOptions["site.title"] || defaultOptions["site.title"],
+    "site.subtitle":
+      storedOptions["site.subtitle"] || defaultOptions["site.subtitle"],
     "site.click_behavior":
       storedOptions["site.click_behavior"] || defaultOptions["site.click_behavior"],
     "footer.copyright":
@@ -82,9 +90,10 @@ export default async function AdminOptionsPage({
       <AdminPageHeader
         eyebrow="Options"
         title="基础配置"
-        description="控制链接点击行为和 footer 文案。"
+        description="控制前台展示、链接点击行为和 footer 文案。"
         meta={
           <>
+            <span>{currentOptions["site.title"]}</span>
             <span>click {currentOptions["site.click_behavior"]}</span>
             <span>{footerLinks.length} footer links</span>
           </>
@@ -94,6 +103,34 @@ export default async function AdminOptionsPage({
       <AdminFeedback success={successMessage} error={errorMessage} />
 
       <form action={updateOptions} className="admin-settings-shell">
+        <section className="admin-settings-panel">
+          <div className="admin-board-head">
+            <div>
+              <p className="eyebrow">Site</p>
+              <h3>站点展示</h3>
+            </div>
+            <span className="admin-settings-hint">用于前台顶部品牌区</span>
+          </div>
+          <div className="admin-settings-grid">
+            <label className="admin-field">
+              <span>站点标题</span>
+              <input
+                className="input"
+                name="site.title"
+                defaultValue={currentOptions["site.title"]}
+              />
+            </label>
+            <label className="admin-field lg:col-span-2">
+              <span>站点副标题</span>
+              <input
+                className="input"
+                name="site.subtitle"
+                defaultValue={currentOptions["site.subtitle"]}
+              />
+            </label>
+          </div>
+        </section>
+
         <section className="admin-settings-panel">
           <div className="admin-board-head">
             <div>

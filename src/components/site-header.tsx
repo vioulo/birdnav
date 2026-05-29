@@ -14,6 +14,7 @@ type HeaderAction = {
 };
 
 type SiteHeaderProps = {
+  title?: string;
   meta: string[];
   children?: ReactNode;
   actions?: HeaderAction[];
@@ -22,6 +23,7 @@ type SiteHeaderProps = {
 };
 
 export function SiteHeader({
+  title = "BIRDNAV",
   meta,
   children,
   actions,
@@ -33,7 +35,7 @@ export function SiteHeader({
   return (
     <header className="site-header">
       <Link className="header-brand" href="/">
-        <div className="logo">BIRDNAV</div>
+        <div className="logo">{title}</div>
         <div className="header-brand-meta">
           {meta.map((item) => (
             <span key={item}>{item}</span>

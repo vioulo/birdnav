@@ -80,6 +80,8 @@ export const siteSchema = z.object({
 });
 
 export const optionsSchema = z.object({
+  siteTitle: z.string().trim().min(1, "站点标题不能为空。").max(80, "站点标题过长。"),
+  siteSubtitle: z.string().trim().max(160, "站点副标题过长。"),
   clickBehavior: z.string().refine(isSiteClickBehavior, "站点点击行为无效。"),
   footerCopyright: z
     .string()
@@ -169,6 +171,8 @@ export function parseSiteForm(formData: FormData) {
 
 export function parseOptionsForm(formData: FormData) {
   return optionsSchema.safeParse({
+    siteTitle: formData.get("site.title"),
+    siteSubtitle: formData.get("site.subtitle"),
     clickBehavior: formData.get("site.click_behavior"),
     footerCopyright: formData.get("footer.copyright"),
     footerLinks: formData.get("footer.links"),

@@ -20,13 +20,14 @@ export default async function SiteDetailPage({
     notFound();
   }
 
-  const [site, footerText, footerLinksRaw, themeMode] = await Promise.all([
+  const [site, siteTitle, footerText, footerLinksRaw, themeMode] = await Promise.all([
     prisma.site.findUnique({
       where: { id: siteId },
       include: {
         category: true,
       },
     }),
+    getOptionValue("site.title"),
     getOptionValue("footer.copyright"),
     getOptionValue("footer.links"),
     getThemeMode(),
@@ -44,6 +45,7 @@ export default async function SiteDetailPage({
   return (
     <div className="flex min-h-screen flex-col text-[var(--color-ink)]">
       <SiteHeader
+        title={siteTitle}
         meta={["detail node", site.category.name]}
         initialTheme={themeMode}
         redirectTo={`/site/${site.id}`}

@@ -29,7 +29,8 @@ type HomeExperienceProps = {
   initialCategory: string;
   initialSearch: string;
   initialTheme: ThemeMode;
-  totalSites: number;
+  siteTitle: string;
+  siteSubtitle: string;
 };
 
 export function HomeExperience({
@@ -38,7 +39,8 @@ export function HomeExperience({
   initialCategory,
   initialSearch,
   initialTheme,
-  totalSites,
+  siteTitle,
+  siteSubtitle,
 }: HomeExperienceProps) {
   const [selectedCategory, setSelectedCategory] = useState(initialCategory);
   const [search, setSearch] = useState(initialSearch);
@@ -62,7 +64,8 @@ export function HomeExperience({
   return (
     <>
       <SiteHeader
-        meta={[`${categories.length} categories`, `${totalSites} links indexed`]}
+        title={siteTitle}
+        meta={[siteSubtitle]}
         initialTheme={initialTheme}
       >
         <div className="search-bar">

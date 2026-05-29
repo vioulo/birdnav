@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 export const THEME_COOKIE = "birdnav_theme";
 
 export const defaultOptions = {
+  "site.title": "BIRDNAV",
+  "site.subtitle": "Curated links for focused browsing.",
   "site.click_behavior": "detail",
   "footer.copyright": "© 2026 BirdNav. All rights reserved.",
   "footer.links": "OpenAI|https://openai.com\nGitHub|https://github.com",

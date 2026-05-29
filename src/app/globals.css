@@ -88,6 +88,7 @@ body {
   background:
     radial-gradient(circle, var(--pattern-dot) 1px, transparent 1px),
     linear-gradient(180deg, var(--color-bg) 0%, var(--color-bg-alt) 100%);
+  background-attachment: fixed;
   background-size: 20px 20px, 100% 100%;
   color: var(--color-ink);
   font-family: var(--font-plex-sans), sans-serif;

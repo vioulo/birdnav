@@ -36,8 +36,18 @@ export default async function HomePage({
   const selectedCategory = params.category?.trim() || "all";
   const search = params.q?.trim() || "";
 
-  const [categories, footerText, footerLinksRaw, clickBehaviorRaw, themeMode]: [
+  const [
+    categories,
+    siteTitle,
+    siteSubtitle,
+    footerText,
+    footerLinksRaw,
+    clickBehaviorRaw,
+    themeMode,
+  ]: [
     HomeCategory[],
+    string,
+    string,
     string,
     string,
     string,
@@ -63,6 +73,8 @@ export default async function HomePage({
         },
       },
     }),
+    getOptionValue("site.title"),
+    getOptionValue("site.subtitle"),
     getOptionValue("footer.copyright"),
     getOptionValue("footer.links"),
     getOptionValue("site.click_behavior", "detail"),
@@ -74,7 +86,6 @@ export default async function HomePage({
     : "detail";
   const footerLinks = parseFooterLinks(footerLinksRaw);
   const visibleCategories = categories.filter((category) => category.sites.length > 0);
-  const totalSites = visibleCategories.reduce((sum, category) => sum + category.sites.length, 0);
 
   const allItems = visibleCategories.flatMap((category) =>
     category.sites.map((site) => ({
@@ -105,7 +116,8 @@ export default async function HomePage({
         initialCategory={selectedCategory}
         initialSearch={search}
         initialTheme={themeMode}
-        totalSites={totalSites}
+        siteTitle={siteTitle}
+        siteSubtitle={siteSubtitle}
       />
 
       <SiteFooter copyright={footerText} links={footerLinks} />
