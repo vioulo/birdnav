@@ -89,11 +89,7 @@ export default async function SiteDetailPage({
         </div>
       </main>
 
-      <SiteFooter
-        copyright={footerText}
-        links={footerLinks}
-        meta={`${footerLinks.length} footer links · DETAIL VIEW`}
-      />
+      <SiteFooter copyright={footerText} links={footerLinks} />
     </div>
   );
 }

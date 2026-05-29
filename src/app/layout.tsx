@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import type { CSSProperties } from "react";
+import { BootVeil } from "@/components/boot-veil";
 import { defaultOptions, getOptionsMap } from "@/lib/options";
 import { getThemeMode } from "@/lib/theme";
 import "./globals.css";
@@ -84,7 +85,19 @@ export default async function RootLayout({
 
   return (
     <html lang="zh-CN" data-theme={themeMode} className="h-full" style={rootStyle}>
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <style
+          dangerouslySetInnerHTML={{
+            __html:
+              "html:not(.is-boot-ready)::before{content:'';position:fixed;inset:0;z-index:2147483647;pointer-events:none;background:#0f172a;animation:birdnavBootVeil 700ms ease forwards}@keyframes birdnavBootVeil{0%,72%{opacity:1;visibility:visible}100%{opacity:0;visibility:hidden}}html.is-boot-ready::before{opacity:0;visibility:hidden}",
+          }}
+        />
+        <BootVeil />
+        <noscript>
+          <style>{"html::before{display:none!important}"}</style>
+        </noscript>
+        {children}
+      </body>
     </html>
   );
 }

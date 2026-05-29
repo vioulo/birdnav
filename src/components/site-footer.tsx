@@ -6,13 +6,11 @@ type SiteFooterProps = {
     label: string;
     href: string;
   }>;
-  meta?: string;
 };
 
 export function SiteFooter({
   copyright,
   links,
-  meta = "UNIFIED INTERACTION · DUAL THEME",
 }: SiteFooterProps) {
   return (
     <footer className="site-footer">
@@ -20,7 +18,7 @@ export function SiteFooter({
         <div className="copyright">
           {copyright}
           <br />
-          {meta} · {appVersion}
+          {appVersion}
         </div>
         <div className="footer-links">
           {links.map((link) => (
