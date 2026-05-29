@@ -43,7 +43,7 @@ export default async function SiteDetailPage({
   } as CSSProperties;
 
   return (
-    <div className="flex min-h-screen flex-col text-[var(--color-ink)]">
+    <div className="flex min-h-screen flex-col text-foreground">
       <SiteHeader
         title={siteTitle}
         meta={["detail node", site.category.name]}

@@ -104,7 +104,7 @@ export default async function HomePage({
   );
 
   return (
-    <div className="flex min-h-screen flex-col text-[var(--color-ink)]">
+    <div className="flex min-h-screen flex-col text-foreground">
       <HomeExperience
         categories={visibleCategories.map((category) => ({
           id: category.id,
