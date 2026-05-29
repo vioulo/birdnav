@@ -99,7 +99,6 @@ async function createSite(formData: FormData) {
 
   const admin = await requireAdmin();
   const keyword = String(formData.get("q") || "").trim();
-  const autoDiscoverIcon = formData.get("autoDiscoverIcon") === "on";
 
   const parsed = parseSiteForm(formData);
 
@@ -131,7 +130,7 @@ async function createSite(formData: FormData) {
   let createdSite;
 
   try {
-    const resolvedIconUrl = iconUrl || (autoDiscoverIcon ? await discoverSiteIconUrl(url) : null);
+    const resolvedIconUrl = iconUrl || await discoverSiteIconUrl(url);
 
     createdSite = await prisma.site.create({
       data: {
@@ -170,7 +169,7 @@ async function createSite(formData: FormData) {
     summary: `创建站点 ${createdSite.name}`,
     payload: {
       catId: createdSite.catId,
-      autoDiscoveredIcon: autoDiscoverIcon && !iconUrl && !!createdSite.iconUrl,
+      autoDiscoveredIcon: !iconUrl && !!createdSite.iconUrl,
       isFeatured: createdSite.isFeatured,
       isPublished: createdSite.isPublished,
     },
@@ -216,13 +215,15 @@ async function updateSite(formData: FormData) {
   let updatedSite;
 
   try {
+    const resolvedIconUrl = iconUrl || await discoverSiteIconUrl(url);
+
     updatedSite = await prisma.site.update({
       where: { id },
       data: {
         catId,
         name,
         url,
-        iconUrl: iconUrl || null,
+        iconUrl: resolvedIconUrl,
         description: description || null,
         featureImage: featureImage || null,
         isFeatured,
@@ -489,7 +490,7 @@ export default async function AdminSitesPage({
                         className="input"
                         name="iconUrl"
                         defaultValue={site.iconUrl || ""}
-                        placeholder="站点 Icon 链接"
+                        placeholder="留空自动尝试抓取"
                       />
                     </label>
                     <label className="admin-field">
@@ -627,11 +628,7 @@ export default async function AdminSitesPage({
               </label>
               <label className="block space-y-2">
                 <span className="text-sm font-medium">站点 Icon</span>
-                <input className="input" name="iconUrl" placeholder="可选，手动填写图标链接" />
-              </label>
-              <label className="flex items-center gap-2 text-sm text-[var(--color-muted)]">
-                <input name="autoDiscoverIcon" type="checkbox" />
-                允许系统尝试抓取图标，仅限公网 80/443 站点
+                <input className="input" name="iconUrl" placeholder="可选，留空自动尝试抓取" />
               </label>
               <label className="block space-y-2">
                 <span className="text-sm font-medium">简介</span>
