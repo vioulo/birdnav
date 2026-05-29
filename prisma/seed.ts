@@ -54,7 +54,7 @@ async function main() {
   }
 
   const categories = [
-    { name: "AI Tools", slug: "ai-tools", color: "#5b8cff", sortOrder: 1 },
+    { name: "Default", slug: "default", color: "#5b8cff", sortOrder: 1 },
     { name: "Development", slug: "development", color: "#17a673", sortOrder: 2 },
     { name: "Design", slug: "design", color: "#c86b1f", sortOrder: 3 },
   ];

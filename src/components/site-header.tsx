@@ -43,34 +43,33 @@ export function SiteHeader({
         </div>
       </Link>
       {children}
-      {actions?.length ? (
-        <div className="site-header-actions">
-          {actions.map((action) =>
-            action.external ? (
-              <a
-                key={`${action.label}-${action.href}`}
-                className={`header-action-link ${action.strong ? "is-strong" : ""}`}
-                href={action.href}
-                target="_blank"
-                rel="noreferrer"
-              >
-                {action.label}
-              </a>
-            ) : (
-              <Link
-                key={`${action.label}-${action.href}`}
-                className={`header-action-link ${action.strong ? "is-strong" : ""}`}
-                href={action.href}
-              >
-                {action.label}
-              </Link>
-            ),
-          )}
-          {themeToggle}
-        </div>
-      ) : (
-        themeToggle
-      )}
+      <div className="site-header-actions">
+        {actions?.map((action) =>
+          action.external ? (
+            <a
+              key={`${action.label}-${action.href}`}
+              className={`header-action-link ${action.strong ? "is-strong" : ""}`}
+              href={action.href}
+              target="_blank"
+              rel="noreferrer"
+            >
+              {action.label}
+            </a>
+          ) : (
+            <Link
+              key={`${action.label}-${action.href}`}
+              className={`header-action-link ${action.strong ? "is-strong" : ""}`}
+              href={action.href}
+            >
+              {action.label}
+            </Link>
+          ),
+        )}
+        <Link className="header-action-link" href="/v1">
+          V1
+        </Link>
+        {themeToggle}
+      </div>
     </header>
   );
 }
