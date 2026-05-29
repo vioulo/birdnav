@@ -38,6 +38,7 @@ async function updateOptions(formData: FormData) {
     siteKeywords,
     siteUrl,
     siteOgImage,
+    uiRadius,
     clickBehavior,
     footerCopyright,
     footerLinks,
@@ -50,6 +51,7 @@ async function updateOptions(formData: FormData) {
     upsertOption("site.keywords", siteKeywords),
     upsertOption("site.url", siteUrl || ""),
     upsertOption("site.og_image", siteOgImage || ""),
+    upsertOption("ui.radius", String(uiRadius)),
     upsertOption("site.click_behavior", clickBehavior),
     upsertOption("footer.copyright", footerCopyright || defaultOptions["footer.copyright"]),
     upsertOption("footer.links", footerLinks || defaultOptions["footer.links"]),
@@ -70,6 +72,7 @@ async function updateOptions(formData: FormData) {
       siteKeywords,
       siteUrl,
       hasOgImage: !!siteOgImage,
+      uiRadius,
       clickBehavior,
       footerCopyright,
       footerLinksLineCount: footerLinks.split("\n").filter(Boolean).length,
@@ -102,6 +105,8 @@ export default async function AdminOptionsPage({
       storedOptions["site.url"] || defaultOptions["site.url"],
     "site.og_image":
       storedOptions["site.og_image"] || defaultOptions["site.og_image"],
+    "ui.radius":
+      storedOptions["ui.radius"] || defaultOptions["ui.radius"],
     "site.click_behavior":
       storedOptions["site.click_behavior"] || defaultOptions["site.click_behavior"],
     "footer.copyright":
@@ -121,6 +126,7 @@ export default async function AdminOptionsPage({
           <>
             <span>{currentOptions["site.title"]}</span>
             <span>SEO ready</span>
+            <span>radius {currentOptions["ui.radius"]}px</span>
             <span>click {currentOptions["site.click_behavior"]}</span>
             <span>{footerLinks.length} footer links</span>
           </>
@@ -134,9 +140,9 @@ export default async function AdminOptionsPage({
           <div className="admin-board-head">
             <div>
               <p className="eyebrow">Site</p>
-              <h3>站点展示</h3>
+              <h3>站点基础</h3>
             </div>
-            <span className="admin-settings-hint">用于前台顶部品牌区</span>
+            <span className="admin-settings-hint">展示、交互与界面风格</span>
           </div>
           <div className="admin-settings-grid">
             <label className="admin-field">
@@ -153,6 +159,29 @@ export default async function AdminOptionsPage({
                 className="input"
                 name="site.subtitle"
                 defaultValue={currentOptions["site.subtitle"]}
+              />
+            </label>
+            <label className="admin-field">
+              <span>站点点击行为</span>
+              <select
+                className="input"
+                name="site.click_behavior"
+                defaultValue={currentOptions["site.click_behavior"]}
+              >
+                <option value="detail">进入详情页</option>
+                <option value="direct">直接跳转</option>
+              </select>
+            </label>
+            <label className="admin-field">
+              <span>圆角大小</span>
+              <input
+                className="input"
+                name="ui.radius"
+                type="number"
+                min="0"
+                max="24"
+                step="1"
+                defaultValue={currentOptions["ui.radius"]}
               />
             </label>
           </div>
@@ -201,29 +230,6 @@ export default async function AdminOptionsPage({
                 placeholder="https://example.com/og.jpg"
                 defaultValue={currentOptions["site.og_image"]}
               />
-            </label>
-          </div>
-        </section>
-
-        <section className="admin-settings-panel">
-          <div className="admin-board-head">
-            <div>
-              <p className="eyebrow">Behavior</p>
-              <h3>访问行为</h3>
-            </div>
-            <span className="admin-settings-hint">影响前台默认体验</span>
-          </div>
-          <div className="admin-settings-grid">
-            <label className="admin-field">
-              <span>站点点击行为</span>
-              <select
-                className="input"
-                name="site.click_behavior"
-                defaultValue={currentOptions["site.click_behavior"]}
-              >
-                <option value="detail">进入详情页</option>
-                <option value="direct">直接跳转</option>
-              </select>
             </label>
           </div>
         </section>

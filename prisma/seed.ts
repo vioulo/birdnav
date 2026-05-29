@@ -11,6 +11,7 @@ const defaultOptions = {
   "site.keywords": "navigation, links, bookmarks, BirdNav",
   "site.url": "",
   "site.og_image": "",
+  "ui.radius": "0",
   "site.click_behavior": "detail",
   "footer.copyright": "© 2026 BirdNav. All rights reserved.",
   "footer.links": "OpenAI|https://openai.com\nGitHub|https://github.com",

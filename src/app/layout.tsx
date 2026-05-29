@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import type { CSSProperties } from "react";
 import { defaultOptions, getOptionsMap } from "@/lib/options";
 import { getThemeMode } from "@/lib/theme";
 import "./globals.css";
@@ -24,6 +25,13 @@ function parseAbsoluteUrl(input: string) {
   } catch {
     return undefined;
   }
+}
+
+function readUiRadius(options: Record<string, string>) {
+  const value = Number.parseInt(readOption(options, "ui.radius"), 10);
+  const radius = Number.isFinite(value) ? Math.min(Math.max(value, 0), 24) : 0;
+
+  return `${radius}px`;
 }
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -69,10 +77,13 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const themeMode = await getThemeMode();
+  const [themeMode, options] = await Promise.all([getThemeMode(), getOptionsMap()]);
+  const rootStyle = {
+    "--ui-radius": readUiRadius(options),
+  } as CSSProperties;
 
   return (
-    <html lang="zh-CN" data-theme={themeMode} className="h-full">
+    <html lang="zh-CN" data-theme={themeMode} className="h-full" style={rootStyle}>
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );

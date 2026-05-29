@@ -86,6 +86,7 @@ export const optionsSchema = z.object({
   siteKeywords: z.string().trim().max(300, "SEO 关键词过长。"),
   siteUrl: optionalHttpUrl.or(z.literal("")),
   siteOgImage: optionalHttpUrl.or(z.literal("")),
+  uiRadius: z.coerce.number().int("圆角大小必须是整数。").min(0).max(24),
   clickBehavior: z.string().refine(isSiteClickBehavior, "站点点击行为无效。"),
   footerCopyright: z
     .string()
@@ -184,6 +185,7 @@ export function parseOptionsForm(formData: FormData) {
     siteKeywords: formData.get("site.keywords"),
     siteUrl,
     siteOgImage,
+    uiRadius: formData.get("ui.radius"),
     clickBehavior: formData.get("site.click_behavior"),
     footerCopyright: formData.get("footer.copyright"),
     footerLinks: formData.get("footer.links"),
