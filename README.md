@@ -7,8 +7,9 @@ BirdNav 是一个基于 Next.js 16、React 19、Prisma 和 MySQL 的导航站项
 已完成：
 
 - 移除后台登录页中的默认账号密码回显
-- 生产环境强制要求配置 `SESSION_SECRET`
-- 为后台会话增加签名校验与过期检查
+- 为后台会话切换为服务端 session，并在改密后使旧会话失效
+- 为后台登录增加限流与失败审计
+- 为站点图标自动抓取增加公网限制，并改为显式开启
 - 将后台分类、站点、配置表单补充为服务端校验
 - 为后台新增成功/失败反馈消息
 - 为删除分类、删除站点增加确认操作
@@ -46,7 +47,6 @@ bun install
 
 ```bash
 DATABASE_URL="mysql://user:password@127.0.0.1:3306/birdnav"
-SESSION_SECRET="replace-with-a-long-random-secret"
 ADMIN_USERNAME="admin"
 ADMIN_PASSWORD="change-me"
 ```
@@ -98,6 +98,7 @@ bun run db:seed
 
 - 后台入口：`/admin/login`
 - 所有后台写操作都在服务端再次做管理员校验
+- 登录失败与限流事件也会进入审计日志
 - 分类删除会级联删除该分类下的站点，请谨慎操作
 - 账户安全页：`/admin/account`
 - 操作日志页：`/admin/logs`
@@ -136,6 +137,5 @@ bun run db:migrate:status
 
 ## 部署注意
 
-- 生产环境必须设置 `SESSION_SECRET`
 - 建议单独配置正式数据库账号，不要复用本地数据库
-- 如果需要审计能力，建议为后台操作补充日志
+- 站点图标自动抓取默认关闭，如需开启，仅支持公网 80/443 站点

@@ -44,9 +44,12 @@ async function updatePassword(formData: FormData) {
     targetType: "user",
     targetId: admin.id,
     summary: `管理员 ${admin.username} 更新了登录密码`,
+    payload: {
+      revokedOtherSessions: true,
+    },
   });
 
-  redirect(buildAccountFeedbackHref("success", "密码修改成功。"));
+  redirect(buildAccountFeedbackHref("success", "密码修改成功，旧会话已失效。"));
 }
 
 export default async function AdminAccountPage({

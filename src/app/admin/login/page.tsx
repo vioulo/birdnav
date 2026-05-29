@@ -1,9 +1,26 @@
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 
-import { getCurrentAdmin, loginAdmin } from "@/lib/auth";
+import { attemptAdminLogin, getCurrentAdmin } from "@/lib/auth";
 import { recordAuditLog } from "@/lib/audit";
-import { prisma } from "@/lib/prisma";
 import { parseLoginForm } from "@/lib/validation";
+
+const LOGIN_RETRY_AFTER_DEFAULT_SECONDS = 900;
+
+function getClientIpAddress(headerStore: Headers) {
+  const forwardedFor = headerStore.get("x-forwarded-for");
+
+  if (forwardedFor) {
+    const firstForwardedIp = forwardedFor.split(",")[0]?.trim();
+
+    if (firstForwardedIp) {
+      return firstForwardedIp.slice(0, 120);
+    }
+  }
+
+  const realIp = headerStore.get("x-real-ip")?.trim();
+  return realIp ? realIp.slice(0, 120) : null;
+}
 
 async function handleLogin(formData: FormData) {
   "use server";
@@ -15,27 +32,49 @@ async function handleLogin(formData: FormData) {
   }
 
   const { username, password } = parsed.data;
+  const headerStore = await headers();
+  const ipAddress = getClientIpAddress(headerStore);
+  const result = await attemptAdminLogin({
+    username,
+    password,
+    ipAddress,
+  });
 
-  const ok = await loginAdmin(username, password);
+  if (!result.ok) {
+    await recordAuditLog({
+      userId: result.userId,
+      action: result.code === "rate_limited" ? "auth.login.blocked" : "auth.login.failed",
+      targetType: "auth",
+      targetId: username,
+      summary:
+        result.code === "rate_limited"
+          ? `登录已被临时限制：${username}`
+          : `登录失败：${username}`,
+      payload: {
+        ipAddress,
+        retryAfterSeconds: result.retryAfterSeconds ?? null,
+      },
+    });
 
-  if (!ok) {
+    if (result.code === "rate_limited") {
+      redirect(
+        `/admin/login?error=rate_limited&retryAfter=${result.retryAfterSeconds ?? LOGIN_RETRY_AFTER_DEFAULT_SECONDS}`,
+      );
+    }
+
     redirect("/admin/login?error=auth");
   }
 
-  const user = await prisma.user.findUnique({
-    where: { username },
-    select: { id: true },
+  await recordAuditLog({
+    userId: result.userId,
+    action: "auth.login",
+    targetType: "user",
+    targetId: result.userId,
+    summary: `管理员 ${result.username} 登录后台`,
+    payload: {
+      ipAddress,
+    },
   });
-
-  if (user) {
-    await recordAuditLog({
-      userId: user.id,
-      action: "auth.login",
-      targetType: "user",
-      targetId: user.id,
-      summary: `管理员 ${username} 登录后台`,
-    });
-  }
 
   redirect("/admin");
 }
@@ -43,7 +82,7 @@ async function handleLogin(formData: FormData) {
 export default async function AdminLoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; retryAfter?: string }>;
 }) {
   const admin = await getCurrentAdmin();
 
@@ -52,9 +91,12 @@ export default async function AdminLoginPage({
   }
 
   const params = await searchParams;
+  const retryAfterSeconds = Math.max(1, Number(params.retryAfter || "0") || 0);
   const errorMessage =
     params.error === "auth"
       ? "用户名或密码不正确。"
+      : params.error === "rate_limited"
+        ? `尝试过于频繁，请在 ${retryAfterSeconds || LOGIN_RETRY_AFTER_DEFAULT_SECONDS} 秒后重试。`
       : params.error === "validation"
         ? "请完整填写登录信息。"
         : null;

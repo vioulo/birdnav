@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 
 type AuditInput = {
-  userId: number;
+  userId?: number | null;
   action: string;
   targetType: string;
   targetId?: string | number | null;
@@ -20,12 +20,12 @@ export async function recordAuditLog({
   try {
     await prisma.auditLog.create({
       data: {
-        userId,
         action,
         targetType,
         targetId: targetId === undefined || targetId === null ? null : String(targetId),
         summary,
         payload: payload ? JSON.stringify(payload) : null,
+        ...(userId ? { user: { connect: { id: userId } } } : {}),
       },
     });
   } catch (error) {

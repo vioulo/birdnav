@@ -68,7 +68,7 @@ export default async function AdminLogsPage({
               <div className="text-sm text-[var(--color-muted)]">
                 {log.createdAt.toLocaleString("zh-CN")}
               </div>
-              <div>{log.user.username}</div>
+              <div>{log.user?.username || "system"}</div>
               <div className="font-mono text-xs uppercase tracking-[0.12em] text-[var(--color-muted)]">
                 {log.action}
               </div>
