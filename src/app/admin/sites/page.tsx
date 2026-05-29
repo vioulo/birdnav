@@ -7,6 +7,7 @@ import { AdminFeedback } from "@/components/admin-feedback";
 import { AdminPageHeader } from "@/components/admin-page-header";
 import { AdminShell } from "@/components/admin-shell";
 import { ConfirmSubmitButton } from "@/components/confirm-submit-button";
+import { ModalEscClose } from "@/components/modal-esc-close";
 import { requireAdmin } from "@/lib/auth";
 import { recordAuditLog } from "@/lib/audit";
 import { getActionErrorMessage } from "@/lib/db-errors";
@@ -874,6 +875,7 @@ export default async function AdminSitesPage({
 
       {isCreateModalOpen ? (
         <div className="modal-overlay">
+          <ModalEscClose href={buildSitesHref(page, keyword)} />
           <div className="modal-card">
             <div className="modal-header">
               <div>
@@ -955,6 +957,7 @@ export default async function AdminSitesPage({
 
       {isBulkModalOpen ? (
         <div className="modal-overlay">
+          <ModalEscClose href={buildSitesHref(page, keyword)} />
           <div className="modal-card">
             <div className="modal-header">
               <div>
