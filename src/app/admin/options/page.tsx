@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
@@ -6,7 +7,7 @@ import { AdminPageHeader } from "@/components/admin-page-header";
 import { AdminShell } from "@/components/admin-shell";
 import { requireAdmin } from "@/lib/auth";
 import { recordAuditLog } from "@/lib/audit";
-import { defaultOptions, getOptionsMap, upsertOption } from "@/lib/options";
+import { defaultOptions, getOptionsMap, parseFooterLinks, upsertOption } from "@/lib/options";
 import { parseOptionsForm } from "@/lib/validation";
 
 function buildOptionsFeedbackHref(type: "success" | "error", message: string) {
@@ -79,6 +80,7 @@ export default async function AdminOptionsPage({
     "footer.links":
       storedOptions["footer.links"] || defaultOptions["footer.links"],
   };
+  const footerLinks = parseFooterLinks(currentOptions["footer.links"]);
 
   return (
     <AdminShell currentPath="/admin/options" username={admin.username}>
@@ -86,56 +88,93 @@ export default async function AdminOptionsPage({
         eyebrow="Options"
         title="基础配置"
         description="控制首页默认主题、链接点击行为和 footer 文案。"
+        meta={
+          <>
+            <span>theme {currentOptions["theme.default"]}</span>
+            <span>click {currentOptions["site.click_behavior"]}</span>
+            <span>{footerLinks.length} footer links</span>
+          </>
+        }
       />
 
       <AdminFeedback success={successMessage} error={errorMessage} />
 
-      <section className="tech-panel overflow-hidden">
-        <form action={updateOptions} className="grid gap-4 p-8 lg:grid-cols-2">
-          <label className="block space-y-2">
-            <span className="text-sm font-medium">默认主题</span>
-            <select className="input" name="theme.default" defaultValue={currentOptions["theme.default"]}>
-              <option value="dark">Dark</option>
-              <option value="light">Light</option>
-            </select>
-          </label>
-          <label className="block space-y-2">
-            <span className="text-sm font-medium">站点点击行为</span>
-            <select
-              className="input"
-              name="site.click_behavior"
-              defaultValue={currentOptions["site.click_behavior"]}
-            >
-              <option value="detail">进入详情页</option>
-              <option value="direct">直接跳转</option>
-            </select>
-          </label>
-          <label className="block space-y-2 lg:col-span-2">
-            <span className="text-sm font-medium">版权信息</span>
-            <input
-              className="input"
-              name="footer.copyright"
-              defaultValue={currentOptions["footer.copyright"]}
-            />
-          </label>
-          <label className="block space-y-2 lg:col-span-2">
-            <span className="text-sm font-medium">友情链接</span>
-            <textarea
-              className="input min-h-36 resize-y"
-              name="footer.links"
-              defaultValue={currentOptions["footer.links"]}
-            />
-            <span className="text-xs text-[var(--color-muted)]">
-              每行格式：名称|链接
-            </span>
-          </label>
-          <div className="lg:col-span-2">
+      <form action={updateOptions} className="admin-settings-shell">
+        <section className="admin-settings-panel">
+          <div className="admin-board-head">
+            <div>
+              <p className="eyebrow">Behavior</p>
+              <h3>访问行为</h3>
+            </div>
+            <span className="admin-settings-hint">影响前台默认体验</span>
+          </div>
+          <div className="admin-settings-grid">
+            <label className="admin-field">
+              <span>默认主题</span>
+              <select
+                className="input"
+                name="theme.default"
+                defaultValue={currentOptions["theme.default"]}
+              >
+                <option value="dark">Dark</option>
+                <option value="light">Light</option>
+              </select>
+            </label>
+            <label className="admin-field">
+              <span>站点点击行为</span>
+              <select
+                className="input"
+                name="site.click_behavior"
+                defaultValue={currentOptions["site.click_behavior"]}
+              >
+                <option value="detail">进入详情页</option>
+                <option value="direct">直接跳转</option>
+              </select>
+            </label>
+          </div>
+        </section>
+
+        <section className="admin-settings-panel">
+          <div className="admin-board-head">
+            <div>
+              <p className="eyebrow">Footer</p>
+              <h3>页脚内容</h3>
+            </div>
+            <span className="admin-settings-hint">{footerLinks.length} 条友情链接</span>
+          </div>
+          <div className="admin-settings-grid">
+            <label className="admin-field lg:col-span-2">
+              <span>版权信息</span>
+              <input
+                className="input"
+                name="footer.copyright"
+                defaultValue={currentOptions["footer.copyright"]}
+              />
+            </label>
+            <label className="admin-field lg:col-span-2">
+              <span>友情链接</span>
+              <textarea
+                className="input min-h-36 resize-y"
+                name="footer.links"
+                defaultValue={currentOptions["footer.links"]}
+              />
+              <small className="admin-settings-note">每行格式：名称|链接</small>
+            </label>
+          </div>
+        </section>
+
+        <section className="admin-settings-submit">
+          <div>
+            <p className="eyebrow">Commit</p>
+            <h3>保存并刷新前台缓存</h3>
+          </div>
+          <div className="admin-settings-submit-actions">
             <button className="button-primary" type="submit">
               保存配置
             </button>
           </div>
-        </form>
-      </section>
+        </section>
+      </form>
     </AdminShell>
   );
 }

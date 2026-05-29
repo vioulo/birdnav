@@ -13,7 +13,7 @@ const navItems = [
   { href: "/admin/options", label: "基础配置" },
   { href: "/admin/account", label: "账户安全" },
   { href: "/admin/logs", label: "操作日志" },
-  { href: "/", label: "查看前台" },
+  { href: "/", label: "查看前台", external: true },
 ];
 
 export function AdminShell({
@@ -36,12 +36,21 @@ export function AdminShell({
           <nav className="admin-nav">
             {navItems.map((item) => {
               const active = currentPath === item.href;
+              const className = [
+                "admin-nav-link",
+                active ? "active" : "",
+                item.external ? "is-front-stage" : "",
+              ]
+                .filter(Boolean)
+                .join(" ");
 
               return (
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`admin-nav-link ${active ? "active" : ""}`}
+                  className={className}
+                  target={item.external ? "_blank" : undefined}
+                  rel={item.external ? "noreferrer" : undefined}
                 >
                   {item.label}
                 </Link>

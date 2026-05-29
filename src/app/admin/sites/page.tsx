@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
@@ -38,12 +39,34 @@ type SiteCategory = {
   name: string;
 };
 
-function buildSitesHref(page: number) {
-  return page > 1 ? `/admin/sites?page=${page}` : "/admin/sites";
+function buildSitesHref(page: number, keyword = "") {
+  const searchParams = new URLSearchParams();
+
+  if (page > 1) {
+    searchParams.set("page", String(page));
+  }
+
+  if (keyword) {
+    searchParams.set("q", keyword);
+  }
+
+  const query = searchParams.toString();
+  return query ? `/admin/sites?${query}` : "/admin/sites";
 }
 
-function buildSitesModalHref(page: number) {
-  return `${buildSitesHref(page)}${page > 1 ? "&" : "?"}modal=new`.replace("?&", "?");
+function buildSitesModalHref(page: number, keyword = "") {
+  const searchParams = new URLSearchParams();
+
+  if (page > 1) {
+    searchParams.set("page", String(page));
+  }
+
+  if (keyword) {
+    searchParams.set("q", keyword);
+  }
+
+  searchParams.set("modal", "new");
+  return `/admin/sites?${searchParams.toString()}`;
 }
 
 function buildSitesFeedbackHref(
@@ -51,11 +74,16 @@ function buildSitesFeedbackHref(
   type: "success" | "error",
   message: string,
   modal?: "new",
+  keyword = "",
 ) {
   const searchParams = new URLSearchParams();
 
   if (page > 1) {
     searchParams.set("page", String(page));
+  }
+
+  if (keyword) {
+    searchParams.set("q", keyword);
   }
 
   if (modal) {
@@ -70,6 +98,7 @@ async function createSite(formData: FormData) {
   "use server";
 
   const admin = await requireAdmin();
+  const keyword = String(formData.get("q") || "").trim();
 
   const parsed = parseSiteForm(formData);
 
@@ -80,6 +109,7 @@ async function createSite(formData: FormData) {
         "error",
         parsed.error.issues[0]?.message || "站点信息无效。",
         "new",
+        keyword,
       ),
     );
   }
@@ -122,6 +152,7 @@ async function createSite(formData: FormData) {
         "error",
         getActionErrorMessage(error, "创建站点失败。"),
         "new",
+        keyword,
       ),
     );
   }
@@ -143,7 +174,7 @@ async function createSite(formData: FormData) {
     },
   });
 
-  redirect(buildSitesFeedbackHref(page, "success", "站点创建成功。"));
+  redirect(buildSitesFeedbackHref(page, "success", "站点创建成功。", undefined, keyword));
 }
 
 async function updateSite(formData: FormData) {
@@ -153,6 +184,7 @@ async function updateSite(formData: FormData) {
 
   const id = Number(formData.get("id"));
   const page = Math.max(1, Number(formData.get("page") || 1));
+  const keyword = String(formData.get("q") || "").trim();
   const parsed = parseSiteForm(formData);
 
   if (!id || !parsed.success) {
@@ -161,6 +193,8 @@ async function updateSite(formData: FormData) {
         page,
         "error",
         parsed.success ? "站点不存在。" : parsed.error.issues[0]?.message || "站点信息无效。",
+        undefined,
+        keyword,
       ),
     );
   }
@@ -200,6 +234,8 @@ async function updateSite(formData: FormData) {
         page,
         "error",
         getActionErrorMessage(error, "保存站点失败。"),
+        undefined,
+        keyword,
       ),
     );
   }
@@ -221,7 +257,7 @@ async function updateSite(formData: FormData) {
     },
   });
 
-  redirect(buildSitesFeedbackHref(page, "success", "站点保存成功。"));
+  redirect(buildSitesFeedbackHref(page, "success", "站点保存成功。", undefined, keyword));
 }
 
 async function deleteSite(formData: FormData) {
@@ -231,9 +267,10 @@ async function deleteSite(formData: FormData) {
 
   const id = Number(formData.get("id"));
   const page = Math.max(1, Number(formData.get("page") || 1));
+  const keyword = String(formData.get("q") || "").trim();
 
   if (!id) {
-    redirect(buildSitesFeedbackHref(page, "error", "站点不存在。"));
+    redirect(buildSitesFeedbackHref(page, "error", "站点不存在。", undefined, keyword));
   }
 
   const site = await prisma.site.findUnique({
@@ -241,7 +278,7 @@ async function deleteSite(formData: FormData) {
   });
 
   if (!site) {
-    redirect(buildSitesFeedbackHref(page, "error", "站点不存在。"));
+    redirect(buildSitesFeedbackHref(page, "error", "站点不存在。", undefined, keyword));
   }
 
   try {
@@ -254,6 +291,8 @@ async function deleteSite(formData: FormData) {
         page,
         "error",
         getActionErrorMessage(error, "删除站点失败。"),
+        undefined,
+        keyword,
       ),
     );
   }
@@ -275,13 +314,19 @@ async function deleteSite(formData: FormData) {
     },
   });
 
-  redirect(buildSitesFeedbackHref(page, "success", "站点删除成功。"));
+  redirect(buildSitesFeedbackHref(page, "success", "站点删除成功。", undefined, keyword));
 }
 
 export default async function AdminSitesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string; modal?: string; success?: string; error?: string }>;
+  searchParams: Promise<{
+    page?: string;
+    modal?: string;
+    success?: string;
+    error?: string;
+    q?: string;
+  }>;
 }) {
   const admin = await requireAdmin();
   const params = await searchParams;
@@ -289,7 +334,19 @@ export default async function AdminSitesPage({
   const isCreateModalOpen = params.modal === "new";
   const successMessage = params.success?.trim();
   const errorMessage = params.error?.trim();
+  const keyword = params.q?.trim() || "";
   const skip = (page - 1) * PAGE_SIZE;
+  const siteWhere: Prisma.SiteWhereInput = keyword
+    ? {
+        OR: [
+          { name: { contains: keyword } },
+          { url: { contains: keyword } },
+          { iconUrl: { contains: keyword } },
+          { description: { contains: keyword } },
+          { category: { is: { name: { contains: keyword } } } },
+        ],
+      }
+    : {};
 
   const [categories, total, sites]: [SiteCategory[], number, SiteRow[]] = await Promise.all([
     prisma.category.findMany({
@@ -299,8 +356,9 @@ export default async function AdminSitesPage({
         name: true,
       },
     }),
-    prisma.site.count(),
+    prisma.site.count({ where: siteWhere }),
     prisma.site.findMany({
+      where: siteWhere,
       orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
       include: {
         category: {
@@ -328,10 +386,11 @@ export default async function AdminSitesPage({
           <>
             <span>total {total}</span>
             <span>page {page}/{totalPages}</span>
+            {keyword ? <span>filter {keyword}</span> : <span>all records</span>}
           </>
         }
         actions={
-          <Link className="button-primary" href={buildSitesModalHref(page)}>
+          <Link className="button-primary" href={buildSitesModalHref(page, keyword)}>
             新建站点
           </Link>
         }
@@ -340,11 +399,43 @@ export default async function AdminSitesPage({
       <AdminFeedback success={successMessage} error={errorMessage} />
 
       <section className="admin-record-shell">
+        <div className="admin-data-table-toolbar">
+          <div>
+            <p className="eyebrow">Data Table</p>
+            <h3>Site Index</h3>
+          </div>
+          <form action="/admin/sites" className="admin-data-table-search">
+            <input
+              className="input admin-data-table-search-input"
+              type="search"
+              name="q"
+              defaultValue={keyword}
+              placeholder="关键词筛选站点、链接、分类..."
+            />
+            <button className="button-secondary" type="submit">
+              筛选
+            </button>
+            {keyword ? (
+              <Link className="button-secondary" href="/admin/sites">
+                清除
+              </Link>
+            ) : null}
+          </form>
+        </div>
+        <div className="admin-data-table-columns is-site-table">
+          <span>图标</span>
+          <span>站点名称 / 链接</span>
+          <span>所属分类</span>
+          <span>排序权重</span>
+          <span>推广状态</span>
+          <span>发布状态</span>
+          <span>操作</span>
+        </div>
         <div className="admin-record-list">
           {sites.length ? (
             sites.map((site) => (
               <details key={site.id} className="admin-record">
-                <summary className="admin-record-summary">
+                <summary className="admin-record-summary is-site-row">
                   <span className="admin-site-icon" aria-hidden="true">
                     {site.iconUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element
@@ -357,31 +448,30 @@ export default async function AdminSitesPage({
                     <strong>{site.name}</strong>
                     <span>{site.url}</span>
                   </span>
-                  <span className="admin-record-meta">
-                    <span className="admin-color-pill">
-                      <span
-                        className="inline-dot"
-                        style={{
-                          color: site.category.color,
-                          backgroundColor: site.category.color,
-                        }}
-                        aria-hidden="true"
-                      />
-                      {site.category.name}
-                    </span>
-                    <span>sort {site.sortOrder}</span>
-                    <span className={`admin-status-pill ${site.isFeatured ? "is-on" : ""}`}>
-                      {site.isFeatured ? "featured" : "normal"}
-                    </span>
-                    <span className={`admin-status-pill ${site.isPublished ? "is-on" : "is-off"}`}>
-                      {site.isPublished ? "published" : "hidden"}
-                    </span>
+                  <span className="admin-color-pill">
+                    <span
+                      className="inline-dot"
+                      style={{
+                        color: site.category.color,
+                        backgroundColor: site.category.color,
+                      }}
+                      aria-hidden="true"
+                    />
+                    {site.category.name}
+                  </span>
+                  <span className="admin-table-cell">权重 {site.sortOrder}</span>
+                  <span className={`admin-status-pill ${site.isFeatured ? "is-on" : ""}`}>
+                    {site.isFeatured ? "已推广" : "未推广"}
+                  </span>
+                  <span className={`admin-status-pill ${site.isPublished ? "is-on" : "is-off"}`}>
+                    {site.isPublished ? "已发布" : "已隐藏"}
                   </span>
                 </summary>
 
                 <form action={updateSite} className="admin-record-editor">
                   <input type="hidden" name="id" value={site.id} />
                   <input type="hidden" name="page" value={page} />
+                  <input type="hidden" name="q" value={keyword} />
                   <div className="admin-edit-grid">
                     <label className="admin-field">
                       <span>站点名称</span>
@@ -468,18 +558,22 @@ export default async function AdminSitesPage({
         </div>
         <div className="pager">
           <p className="pager-meta">
-            显示 {skip + 1}-{Math.min(skip + PAGE_SIZE, total)} / {total}
+            显示 {total === 0 ? 0 : skip + 1}-{Math.min(skip + PAGE_SIZE, total)} / {total}
           </p>
           <div className="pager-links">
             <Link
               className="button-secondary"
-              href={page > 1 ? buildSitesHref(page - 1) : buildSitesHref(1)}
+              href={page > 1 ? buildSitesHref(page - 1, keyword) : buildSitesHref(1, keyword)}
             >
               上一页
             </Link>
             <Link
               className="button-secondary"
-              href={page < totalPages ? buildSitesHref(page + 1) : buildSitesHref(totalPages)}
+              href={
+                page < totalPages
+                  ? buildSitesHref(page + 1, keyword)
+                  : buildSitesHref(totalPages, keyword)
+              }
             >
               下一页
             </Link>
@@ -495,12 +589,13 @@ export default async function AdminSitesPage({
                 <p className="eyebrow">Create</p>
                 <h3 className="mt-1 text-xl font-semibold">新建站点</h3>
               </div>
-              <Link className="button-secondary" href={buildSitesHref(page)}>
+              <Link className="button-secondary" href={buildSitesHref(page, keyword)}>
                 关闭
               </Link>
             </div>
             <form action={createSite} className="modal-body admin-form-grid">
               <input type="hidden" name="page" value={page} />
+              <input type="hidden" name="q" value={keyword} />
               <div className="admin-form-grid-2">
                 <label className="block space-y-2">
                   <span className="text-sm font-medium">所属分类</span>
@@ -555,7 +650,7 @@ export default async function AdminSitesPage({
                 </label>
               </div>
               <div className="flex justify-end gap-2">
-                <Link className="button-secondary" href={buildSitesHref(page)}>
+                <Link className="button-secondary" href={buildSitesHref(page, keyword)}>
                   取消
                 </Link>
                 <button className="button-primary" type="submit">

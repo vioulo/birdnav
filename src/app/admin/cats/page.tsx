@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
@@ -26,12 +27,34 @@ type CategoryRow = {
   };
 };
 
-function buildCatsHref(page: number) {
-  return page > 1 ? `/admin/cats?page=${page}` : "/admin/cats";
+function buildCatsHref(page: number, keyword = "") {
+  const searchParams = new URLSearchParams();
+
+  if (page > 1) {
+    searchParams.set("page", String(page));
+  }
+
+  if (keyword) {
+    searchParams.set("q", keyword);
+  }
+
+  const query = searchParams.toString();
+  return query ? `/admin/cats?${query}` : "/admin/cats";
 }
 
-function buildCatsModalHref(page: number) {
-  return `${buildCatsHref(page)}${page > 1 ? "&" : "?"}modal=new`.replace("?&", "?");
+function buildCatsModalHref(page: number, keyword = "") {
+  const searchParams = new URLSearchParams();
+
+  if (page > 1) {
+    searchParams.set("page", String(page));
+  }
+
+  if (keyword) {
+    searchParams.set("q", keyword);
+  }
+
+  searchParams.set("modal", "new");
+  return `/admin/cats?${searchParams.toString()}`;
 }
 
 function buildCatsFeedbackHref(
@@ -39,11 +62,16 @@ function buildCatsFeedbackHref(
   type: "success" | "error",
   message: string,
   modal?: "new",
+  keyword = "",
 ) {
   const searchParams = new URLSearchParams();
 
   if (page > 1) {
     searchParams.set("page", String(page));
+  }
+
+  if (keyword) {
+    searchParams.set("q", keyword);
   }
 
   if (modal) {
@@ -60,6 +88,7 @@ async function createCategory(formData: FormData) {
   "use server";
 
   const admin = await requireAdmin();
+  const keyword = String(formData.get("q") || "").trim();
 
   const parsed = parseCategoryForm(formData);
 
@@ -70,6 +99,7 @@ async function createCategory(formData: FormData) {
         "error",
         parsed.error.issues[0]?.message || "分类信息无效。",
         "new",
+        keyword,
       ),
     );
   }
@@ -95,6 +125,7 @@ async function createCategory(formData: FormData) {
         "error",
         getActionErrorMessage(error, "创建分类失败。"),
         "new",
+        keyword,
       ),
     );
   }
@@ -117,7 +148,7 @@ async function createCategory(formData: FormData) {
     },
   });
 
-  redirect(buildCatsFeedbackHref(page, "success", "分类创建成功。"));
+  redirect(buildCatsFeedbackHref(page, "success", "分类创建成功。", undefined, keyword));
 }
 
 async function updateCategory(formData: FormData) {
@@ -127,6 +158,7 @@ async function updateCategory(formData: FormData) {
 
   const id = Number(formData.get("id"));
   const page = Math.max(1, Number(formData.get("page") || 1));
+  const keyword = String(formData.get("q") || "").trim();
   const parsed = parseCategoryForm(formData);
 
   if (!id || !parsed.success) {
@@ -135,6 +167,8 @@ async function updateCategory(formData: FormData) {
         page,
         "error",
         parsed.success ? "分类不存在。" : parsed.error.issues[0]?.message || "分类信息无效。",
+        undefined,
+        keyword,
       ),
     );
   }
@@ -160,6 +194,8 @@ async function updateCategory(formData: FormData) {
         page,
         "error",
         getActionErrorMessage(error, "保存分类失败。"),
+        undefined,
+        keyword,
       ),
     );
   }
@@ -182,7 +218,7 @@ async function updateCategory(formData: FormData) {
     },
   });
 
-  redirect(buildCatsFeedbackHref(page, "success", "分类保存成功。"));
+  redirect(buildCatsFeedbackHref(page, "success", "分类保存成功。", undefined, keyword));
 }
 
 async function deleteCategory(formData: FormData) {
@@ -192,9 +228,10 @@ async function deleteCategory(formData: FormData) {
 
   const id = Number(formData.get("id"));
   const page = Math.max(1, Number(formData.get("page") || 1));
+  const keyword = String(formData.get("q") || "").trim();
 
   if (!id) {
-    redirect(buildCatsFeedbackHref(page, "error", "分类不存在。"));
+    redirect(buildCatsFeedbackHref(page, "error", "分类不存在。", undefined, keyword));
   }
 
   const category = await prisma.category.findUnique({
@@ -209,7 +246,7 @@ async function deleteCategory(formData: FormData) {
   });
 
   if (!category) {
-    redirect(buildCatsFeedbackHref(page, "error", "分类不存在。"));
+    redirect(buildCatsFeedbackHref(page, "error", "分类不存在。", undefined, keyword));
   }
 
   try {
@@ -222,6 +259,8 @@ async function deleteCategory(formData: FormData) {
         page,
         "error",
         getActionErrorMessage(error, "删除分类失败。"),
+        undefined,
+        keyword,
       ),
     );
   }
@@ -243,13 +282,21 @@ async function deleteCategory(formData: FormData) {
     },
   });
 
-  redirect(buildCatsFeedbackHref(page, "success", "分类及其下属站点已删除。"));
+  redirect(
+    buildCatsFeedbackHref(page, "success", "分类及其下属站点已删除。", undefined, keyword),
+  );
 }
 
 export default async function AdminCategoriesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string; modal?: string; success?: string; error?: string }>;
+  searchParams: Promise<{
+    page?: string;
+    modal?: string;
+    success?: string;
+    error?: string;
+    q?: string;
+  }>;
 }) {
   const admin = await requireAdmin();
   const params = await searchParams;
@@ -257,11 +304,22 @@ export default async function AdminCategoriesPage({
   const isCreateModalOpen = params.modal === "new";
   const successMessage = params.success?.trim();
   const errorMessage = params.error?.trim();
+  const keyword = params.q?.trim() || "";
   const skip = (page - 1) * PAGE_SIZE;
+  const categoryWhere: Prisma.CategoryWhereInput = keyword
+    ? {
+        OR: [
+          { name: { contains: keyword } },
+          { slug: { contains: keyword } },
+          { color: { contains: keyword } },
+        ],
+      }
+    : {};
 
   const [total, categories]: [number, CategoryRow[]] = await Promise.all([
-    prisma.category.count(),
+    prisma.category.count({ where: categoryWhere }),
     prisma.category.findMany({
+      where: categoryWhere,
       orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
       include: {
         _count: {
@@ -287,10 +345,11 @@ export default async function AdminCategoriesPage({
           <>
             <span>total {total}</span>
             <span>page {page}/{totalPages}</span>
+            {keyword ? <span>filter {keyword}</span> : <span>all records</span>}
           </>
         }
         actions={
-          <Link className="button-primary" href={buildCatsModalHref(page)}>
+          <Link className="button-primary" href={buildCatsModalHref(page, keyword)}>
             新建分类
           </Link>
         }
@@ -299,11 +358,42 @@ export default async function AdminCategoriesPage({
       <AdminFeedback success={successMessage} error={errorMessage} />
 
       <section className="admin-record-shell">
+        <div className="admin-data-table-toolbar">
+          <div>
+            <p className="eyebrow">Data Table</p>
+            <h3>Category Index</h3>
+          </div>
+          <form action="/admin/cats" className="admin-data-table-search">
+            <input
+              className="input admin-data-table-search-input"
+              type="search"
+              name="q"
+              defaultValue={keyword}
+              placeholder="关键词筛选分类、slug、颜色..."
+            />
+            <button className="button-secondary" type="submit">
+              筛选
+            </button>
+            {keyword ? (
+              <Link className="button-secondary" href="/admin/cats">
+                清除
+              </Link>
+            ) : null}
+          </form>
+        </div>
+        <div className="admin-data-table-columns is-cat-table">
+          <span>分类色块</span>
+          <span>分类名称 / Slug</span>
+          <span>关联站点</span>
+          <span>排序权重</span>
+          <span>HEX 色值</span>
+          <span>操作</span>
+        </div>
         <div className="admin-record-list">
           {categories.length ? (
             categories.map((category) => (
               <details key={category.id} className="admin-record">
-                <summary className="admin-record-summary">
+                <summary className="admin-record-summary is-cat-row">
                   <span
                     className="admin-category-swatch"
                     style={{ color: category.color, backgroundColor: category.color }}
@@ -313,18 +403,17 @@ export default async function AdminCategoriesPage({
                     <strong>{category.name}</strong>
                     <span>/{category.slug}</span>
                   </span>
-                  <span className="admin-record-meta">
-                    <span className="admin-status-pill is-on">
-                      {category._count.sites} sites
-                    </span>
-                    <span>sort {category.sortOrder}</span>
-                    <span>{category.color}</span>
+                  <span className="admin-status-pill is-on">
+                    {category._count.sites} 个站点
                   </span>
+                  <span className="admin-table-cell">权重 {category.sortOrder}</span>
+                  <span className="admin-table-cell">{category.color}</span>
                 </summary>
 
                 <form action={updateCategory} className="admin-record-editor">
                   <input type="hidden" name="id" value={category.id} />
                   <input type="hidden" name="page" value={page} />
+                  <input type="hidden" name="q" value={keyword} />
                   <div className="admin-edit-grid">
                     <label className="admin-field">
                       <span>分类名称</span>
@@ -379,18 +468,22 @@ export default async function AdminCategoriesPage({
         </div>
         <div className="pager">
           <p className="pager-meta">
-            显示 {skip + 1}-{Math.min(skip + PAGE_SIZE, total)} / {total}
+            显示 {total === 0 ? 0 : skip + 1}-{Math.min(skip + PAGE_SIZE, total)} / {total}
           </p>
           <div className="pager-links">
             <Link
               className="button-secondary"
-              href={page > 1 ? buildCatsHref(page - 1) : buildCatsHref(1)}
+              href={page > 1 ? buildCatsHref(page - 1, keyword) : buildCatsHref(1, keyword)}
             >
               上一页
             </Link>
             <Link
               className="button-secondary"
-              href={page < totalPages ? buildCatsHref(page + 1) : buildCatsHref(totalPages)}
+              href={
+                page < totalPages
+                  ? buildCatsHref(page + 1, keyword)
+                  : buildCatsHref(totalPages, keyword)
+              }
             >
               下一页
             </Link>
@@ -406,12 +499,13 @@ export default async function AdminCategoriesPage({
                 <p className="eyebrow">Create</p>
                 <h3 className="mt-1 text-xl font-semibold">新建分类</h3>
               </div>
-              <Link className="button-secondary" href={buildCatsHref(page)}>
+              <Link className="button-secondary" href={buildCatsHref(page, keyword)}>
                 关闭
               </Link>
             </div>
             <form action={createCategory} className="modal-body admin-form-grid">
               <input type="hidden" name="page" value={page} />
+              <input type="hidden" name="q" value={keyword} />
               <label className="block space-y-2">
                 <span className="text-sm font-medium">分类名称</span>
                 <input className="input" name="name" placeholder="例如：开发工具" required />
@@ -431,7 +525,7 @@ export default async function AdminCategoriesPage({
                 <input className="input h-12" name="color" type="color" defaultValue="#4c6fff" />
               </label>
               <div className="flex justify-end gap-2">
-                <Link className="button-secondary" href={buildCatsHref(page)}>
+                <Link className="button-secondary" href={buildCatsHref(page, keyword)}>
                   取消
                 </Link>
                 <button className="button-primary" type="submit">
