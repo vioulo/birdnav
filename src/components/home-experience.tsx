@@ -34,6 +34,8 @@ type HomeExperienceProps = {
   initialCategory: string;
   initialSearch: string;
   initialTheme: ThemeMode;
+  pageSize: number;
+  featuredLimit: number;
   siteTitle: string;
   siteSubtitle: string;
 };
@@ -45,13 +47,18 @@ export function HomeExperience({
   initialCategory,
   initialSearch,
   initialTheme,
+  pageSize,
+  featuredLimit,
   siteTitle,
   siteSubtitle,
 }: HomeExperienceProps) {
   const [selectedCategory, setSelectedCategory] = useState(initialCategory);
   const [search, setSearch] = useState(initialSearch);
+  const [loadState, setLoadState] = useState({ key: "", pages: 1 });
   const deferredSearch = useDeferredValue(search);
   const keyword = deferredSearch.trim().toLowerCase();
+  const filterKey = `${selectedCategory}:${keyword}:${pageSize}`;
+  const loadedPages = loadState.key === filterKey ? loadState.pages : 1;
 
   const filteredItems = items.filter((item) => {
     const matchesCategory =
@@ -65,7 +72,12 @@ export function HomeExperience({
     return matchesCategory && matchesSearch;
   });
 
-  const featuredItems = filteredItems.filter((item) => item.isFeatured).slice(0, 6);
+  const featuredItems = filteredItems
+    .filter((item) => item.isFeatured)
+    .slice(0, featuredLimit);
+  const visibleCount = loadedPages * pageSize;
+  const visibleItems = filteredItems.slice(0, visibleCount);
+  const hasMoreItems = visibleCount < filteredItems.length;
 
   return (
     <>
@@ -141,11 +153,27 @@ export function HomeExperience({
 
         <section className="link-cloud">
           <SiteGrid
-            items={filteredItems}
+            items={visibleItems}
             onCategorySelect={(categorySlug) => {
               startTransition(() => setSelectedCategory(categorySlug));
             }}
           />
+          {hasMoreItems ? (
+            <div className="load-more-row">
+              <button
+                className="button-secondary"
+                type="button"
+                onClick={() => {
+                  setLoadState({ key: filterKey, pages: loadedPages + 1 });
+                }}
+              >
+                加载更多
+                <span>
+                  {visibleItems.length}/{filteredItems.length}
+                </span>
+              </button>
+            </div>
+          ) : null}
         </section>
       </main>
     </>

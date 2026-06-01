@@ -40,6 +40,8 @@ async function updateOptions(formData: FormData) {
     siteOgImage,
     uiRadius,
     clickBehavior,
+    homePageSize,
+    homeFeaturedLimit,
     footerCopyright,
     footerLinks,
   } = parsed.data;
@@ -53,6 +55,8 @@ async function updateOptions(formData: FormData) {
     upsertOption("site.og_image", siteOgImage || ""),
     upsertOption("ui.radius", String(uiRadius)),
     upsertOption("site.click_behavior", clickBehavior),
+    upsertOption("home.page_size", String(homePageSize)),
+    upsertOption("home.featured_limit", String(homeFeaturedLimit)),
     upsertOption("footer.copyright", footerCopyright || defaultOptions["footer.copyright"]),
     upsertOption("footer.links", footerLinks || defaultOptions["footer.links"]),
   ]);
@@ -74,6 +78,8 @@ async function updateOptions(formData: FormData) {
       hasOgImage: !!siteOgImage,
       uiRadius,
       clickBehavior,
+      homePageSize,
+      homeFeaturedLimit,
       footerCopyright,
       footerLinksLineCount: footerLinks.split("\n").filter(Boolean).length,
     },
@@ -109,6 +115,10 @@ export default async function AdminOptionsPage({
       storedOptions["ui.radius"] || defaultOptions["ui.radius"],
     "site.click_behavior":
       storedOptions["site.click_behavior"] || defaultOptions["site.click_behavior"],
+    "home.page_size":
+      storedOptions["home.page_size"] || defaultOptions["home.page_size"],
+    "home.featured_limit":
+      storedOptions["home.featured_limit"] || defaultOptions["home.featured_limit"],
     "footer.copyright":
       storedOptions["footer.copyright"] || defaultOptions["footer.copyright"],
     "footer.links":
@@ -128,6 +138,8 @@ export default async function AdminOptionsPage({
             <span>SEO ready</span>
             <span>radius {currentOptions["ui.radius"]}px</span>
             <span>click {currentOptions["site.click_behavior"]}</span>
+            <span>home {currentOptions["home.page_size"]}</span>
+            <span>featured {currentOptions["home.featured_limit"]}</span>
             <span>{footerLinks.length} footer links</span>
           </>
         }
@@ -182,6 +194,30 @@ export default async function AdminOptionsPage({
                 max="24"
                 step="1"
                 defaultValue={currentOptions["ui.radius"]}
+              />
+            </label>
+            <label className="admin-field">
+              <span>前台分页大小</span>
+              <input
+                className="input"
+                name="home.page_size"
+                type="number"
+                min="1"
+                max="500"
+                step="1"
+                defaultValue={currentOptions["home.page_size"]}
+              />
+            </label>
+            <label className="admin-field">
+              <span>推广展示数量</span>
+              <input
+                className="input"
+                name="home.featured_limit"
+                type="number"
+                min="0"
+                max="100"
+                step="1"
+                defaultValue={currentOptions["home.featured_limit"]}
               />
             </label>
           </div>

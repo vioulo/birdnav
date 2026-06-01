@@ -100,6 +100,8 @@ export const optionsSchema = z.object({
   siteOgImage: optionalHttpUrl.or(z.literal("")),
   uiRadius: z.coerce.number().int("圆角大小必须是整数。").min(0).max(24),
   clickBehavior: z.string().refine(isSiteClickBehavior, "站点点击行为无效。"),
+  homePageSize: z.coerce.number().int("分页大小必须是整数。").min(1).max(500),
+  homeFeaturedLimit: z.coerce.number().int("推广数量必须是整数。").min(0).max(100),
   footerCopyright: z
     .string()
     .trim()
@@ -212,6 +214,8 @@ export function parseOptionsForm(formData: FormData) {
     siteOgImage,
     uiRadius: formData.get("ui.radius"),
     clickBehavior: formData.get("site.click_behavior"),
+    homePageSize: formData.get("home.page_size"),
+    homeFeaturedLimit: formData.get("home.featured_limit"),
     footerCopyright: formData.get("footer.copyright"),
     footerLinks: formData.get("footer.links"),
   });

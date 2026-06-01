@@ -13,6 +13,8 @@ const defaultOptions = {
   "site.og_image": "",
   "ui.radius": "0",
   "site.click_behavior": "detail",
+  "home.page_size": "100",
+  "home.featured_limit": "12",
   "footer.copyright": "© 2026 BirdNav. All rights reserved.",
   "footer.links": "OpenAI|https://openai.com\nGitHub|https://github.com",
 };

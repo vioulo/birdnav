@@ -27,6 +27,26 @@ type HomeCategory = {
   sites: HomeSite[];
 };
 
+function readPositiveInteger(input: string, fallback: number, max: number) {
+  const value = Number.parseInt(input, 10);
+
+  if (!Number.isFinite(value) || value < 1) {
+    return fallback;
+  }
+
+  return Math.min(value, max);
+}
+
+function readNonNegativeInteger(input: string, fallback: number, max: number) {
+  const value = Number.parseInt(input, 10);
+
+  if (!Number.isFinite(value) || value < 0) {
+    return fallback;
+  }
+
+  return Math.min(value, max);
+}
+
 export default async function HomePage({
   searchParams,
 }: {
@@ -43,9 +63,13 @@ export default async function HomePage({
     footerText,
     footerLinksRaw,
     clickBehaviorRaw,
+    homePageSizeRaw,
+    homeFeaturedLimitRaw,
     themeMode,
   ]: [
     HomeCategory[],
+    string,
+    string,
     string,
     string,
     string,
@@ -78,6 +102,8 @@ export default async function HomePage({
     getOptionValue("footer.copyright"),
     getOptionValue("footer.links"),
     getOptionValue("site.click_behavior", "detail"),
+    getOptionValue("home.page_size", "100"),
+    getOptionValue("home.featured_limit", "12"),
     getThemeMode(),
   ]);
 
@@ -85,6 +111,8 @@ export default async function HomePage({
     ? clickBehaviorRaw
     : "detail";
   const footerLinks = parseFooterLinks(footerLinksRaw);
+  const homePageSize = readPositiveInteger(homePageSizeRaw, 100, 500);
+  const homeFeaturedLimit = readNonNegativeInteger(homeFeaturedLimitRaw, 12, 100);
   const visibleCategories = categories.filter((category) => category.sites.length > 0);
 
   const allItems = visibleCategories.flatMap((category) =>
@@ -120,6 +148,8 @@ export default async function HomePage({
         initialCategory={selectedCategory}
         initialSearch={search}
         initialTheme={themeMode}
+        pageSize={homePageSize}
+        featuredLimit={homeFeaturedLimit}
         siteTitle={siteTitle}
         siteSubtitle={siteSubtitle}
       />

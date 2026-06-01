@@ -723,6 +723,23 @@ html[data-theme="dark"] .promo-hero:hover {
   gap: 6px;
 }
 
+.load-more-row {
+  display: flex;
+  justify-content: center;
+  padding-top: 12px;
+}
+
+.load-more-row .button-secondary {
+  gap: 8px;
+  min-width: 160px;
+}
+
+.load-more-row .button-secondary span {
+  font-family: var(--font-plex-mono), monospace;
+  font-size: 0.68rem;
+  color: var(--color-muted);
+}
+
 .link-pill-shell {
   display: inline-flex;
   align-items: stretch;
