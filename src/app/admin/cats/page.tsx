@@ -15,7 +15,7 @@ import { prisma } from "@/lib/prisma";
 import { slugify } from "@/lib/utils";
 import { parseCategoryForm } from "@/lib/validation";
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 20;
 
 type CategoryRow = {
   id: number;
@@ -467,29 +467,35 @@ export default async function AdminCategoriesPage({
             <div className="empty-state">还没有分类，先创建一个分组。</div>
           )}
         </div>
-        <div className="pager">
-          <p className="pager-meta">
-            显示 {total === 0 ? 0 : skip + 1}-{Math.min(skip + PAGE_SIZE, total)} / {total}
-          </p>
-          <div className="pager-links">
-            <Link
-              className="button-secondary"
-              href={page > 1 ? buildCatsHref(page - 1, keyword) : buildCatsHref(1, keyword)}
-            >
-              上一页
-            </Link>
-            <Link
-              className="button-secondary"
-              href={
-                page < totalPages
-                  ? buildCatsHref(page + 1, keyword)
-                  : buildCatsHref(totalPages, keyword)
-              }
-            >
-              下一页
-            </Link>
+        {totalPages > 1 ? (
+          <div className="pager">
+            <p className="pager-meta">
+              显示 {skip + 1}-{Math.min(skip + PAGE_SIZE, total)} / {total}
+            </p>
+            <div className="pager-links">
+              <Link
+                className={`button-secondary pager-link ${page <= 1 ? "is-disabled" : ""}`}
+                href={page > 1 ? buildCatsHref(page - 1, keyword) : buildCatsHref(1, keyword)}
+                aria-disabled={page <= 1}
+                tabIndex={page <= 1 ? -1 : undefined}
+              >
+                上一页
+              </Link>
+              <Link
+                className={`button-secondary pager-link ${page >= totalPages ? "is-disabled" : ""}`}
+                href={
+                  page < totalPages
+                    ? buildCatsHref(page + 1, keyword)
+                    : buildCatsHref(totalPages, keyword)
+                }
+                aria-disabled={page >= totalPages}
+                tabIndex={page >= totalPages ? -1 : undefined}
+              >
+                下一页
+              </Link>
+            </div>
           </div>
-        </div>
+        ) : null}
       </section>
 
       {isCreateModalOpen ? (

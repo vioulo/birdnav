@@ -80,25 +80,31 @@ export default async function AdminLogsPage({
             </div>
           ))}
         </div>
-        <div className="pager">
-          <p className="pager-meta">
-            显示 {total === 0 ? 0 : skip + 1}-{Math.min(skip + PAGE_SIZE, total)} / {total}
-          </p>
-          <div className="pager-links">
-            <a
-              className="button-secondary"
-              href={page > 1 ? buildLogsHref(page - 1) : buildLogsHref(1)}
-            >
-              上一页
-            </a>
-            <a
-              className="button-secondary"
-              href={page < totalPages ? buildLogsHref(page + 1) : buildLogsHref(totalPages)}
-            >
-              下一页
-            </a>
+        {totalPages > 1 ? (
+          <div className="pager">
+            <p className="pager-meta">
+              显示 {skip + 1}-{Math.min(skip + PAGE_SIZE, total)} / {total}
+            </p>
+            <div className="pager-links">
+              <a
+                className={`button-secondary pager-link ${page <= 1 ? "is-disabled" : ""}`}
+                href={page > 1 ? buildLogsHref(page - 1) : buildLogsHref(1)}
+                aria-disabled={page <= 1}
+                tabIndex={page <= 1 ? -1 : undefined}
+              >
+                上一页
+              </a>
+              <a
+                className={`button-secondary pager-link ${page >= totalPages ? "is-disabled" : ""}`}
+                href={page < totalPages ? buildLogsHref(page + 1) : buildLogsHref(totalPages)}
+                aria-disabled={page >= totalPages}
+                tabIndex={page >= totalPages ? -1 : undefined}
+              >
+                下一页
+              </a>
+            </div>
           </div>
-        </div>
+        ) : null}
       </section>
     </AdminShell>
   );

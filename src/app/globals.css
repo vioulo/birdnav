@@ -187,10 +187,19 @@ textarea:focus-visible {
   width: 100%;
   border: 1px solid var(--color-line);
   background: var(--color-panel);
-  padding: 0.8rem 0.9rem;
-  font-size: 0.9rem;
-  line-height: 1.35rem;
+  min-height: 36px;
+  padding: 0.48rem 0.65rem;
+  font-size: 0.82rem;
+  line-height: 1rem;
   color: var(--color-ink);
+}
+
+textarea.input {
+  line-height: 1.35rem;
+}
+
+input[type="color"].input {
+  padding: 0.25rem 0.35rem;
 }
 
 .input::placeholder {
@@ -221,8 +230,9 @@ textarea:focus-visible {
   justify-content: center;
   border: 1px solid var(--color-line);
   background: var(--color-button-primary-bg);
-  padding: 0.7rem 1rem;
-  font-size: 0.88rem;
+  min-height: 36px;
+  padding: 0.48rem 0.72rem;
+  font-size: 0.82rem;
   font-weight: 600;
   color: var(--color-button-text);
 }
@@ -238,8 +248,9 @@ textarea:focus-visible {
   justify-content: center;
   border: 1px solid var(--color-line);
   background: var(--color-panel);
-  padding: 0.7rem 1rem;
-  font-size: 0.88rem;
+  min-height: 36px;
+  padding: 0.48rem 0.72rem;
+  font-size: 0.82rem;
   font-weight: 600;
   color: var(--color-ink);
 }
@@ -249,14 +260,25 @@ textarea:focus-visible {
   background: var(--color-panel-soft);
 }
 
+.button-primary:disabled,
+.button-secondary:disabled,
+.button-danger:disabled,
+.button-primary[aria-disabled="true"],
+.button-secondary[aria-disabled="true"],
+.button-danger[aria-disabled="true"] {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+
 .button-danger {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   border: 1px solid color-mix(in srgb, var(--color-danger) 70%, var(--color-line) 30%);
   background: color-mix(in srgb, var(--color-danger) 22%, var(--color-panel) 78%);
-  padding: 0.7rem 1rem;
-  font-size: 0.88rem;
+  min-height: 36px;
+  padding: 0.48rem 0.72rem;
+  font-size: 0.82rem;
   font-weight: 600;
   color: var(--color-button-text);
 }
@@ -2144,13 +2166,13 @@ html[data-theme="dark"] .detail-button.is-primary:hover {
 
 .admin-settings-shell {
   display: grid;
-  gap: 12px;
+  gap: 10px;
 }
 
 .admin-settings-grid {
   display: grid;
-  gap: 12px;
-  padding: 12px;
+  gap: 10px;
+  padding: 10px;
 }
 
 .admin-settings-submit {
@@ -2158,8 +2180,8 @@ html[data-theme="dark"] .detail-button.is-primary:hover {
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding: 12px;
+  gap: 10px;
+  padding: 10px;
 }
 
 .admin-settings-submit h3 {
@@ -2173,7 +2195,7 @@ html[data-theme="dark"] .detail-button.is-primary:hover {
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
-  gap: 8px;
+  gap: 6px;
 }
 
 .admin-record-shell {
@@ -2205,19 +2227,6 @@ html[data-theme="dark"] .detail-button.is-primary:hover {
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: 6px;
-}
-
-.admin-data-table-search .input {
-  min-height: 36px;
-  padding: 0.48rem 0.65rem;
-  font-size: 0.82rem;
-  line-height: 1rem;
-}
-
-.admin-data-table-search .button-secondary {
-  min-height: 36px;
-  padding: 0.48rem 0.72rem;
-  font-size: 0.82rem;
 }
 
 .admin-data-table-search-input {
@@ -2435,7 +2444,7 @@ html[data-theme="dark"] .detail-button.is-primary:hover {
   background:
     linear-gradient(135deg, color-mix(in srgb, var(--color-accent) 4%, transparent), transparent 60%),
     color-mix(in srgb, var(--color-panel-soft) 72%, var(--color-panel));
-  padding: 34px 12px 12px;
+  padding: 32px 10px 10px;
 }
 
 .admin-record-editor::before {
@@ -2452,12 +2461,12 @@ html[data-theme="dark"] .detail-button.is-primary:hover {
 
 .admin-edit-grid {
   display: grid;
-  gap: 10px;
+  gap: 8px;
 }
 
 .admin-field {
   display: grid;
-  gap: 6px;
+  gap: 5px;
 }
 
 .admin-field > span,
@@ -2472,10 +2481,10 @@ html[data-theme="dark"] .detail-button.is-primary:hover {
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
-  margin-top: 12px;
+  gap: 8px;
+  margin-top: 10px;
   border-top: 1px solid var(--color-line);
-  padding-top: 12px;
+  padding-top: 10px;
 }
 
 .admin-record-hint {
@@ -2528,7 +2537,7 @@ html[data-theme="dark"] .detail-button.is-primary:hover {
 .list-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 6px;
   justify-content: flex-end;
 }
 
@@ -2548,7 +2557,12 @@ html[data-theme="dark"] .detail-button.is-primary:hover {
 
 .pager-links {
   display: flex;
-  gap: 8px;
+  gap: 6px;
+}
+
+.pager-link.is-disabled {
+  pointer-events: none;
+  color: var(--color-muted);
 }
 
 .modal-overlay {
@@ -2582,17 +2596,17 @@ html[data-theme="dark"] .detail-button.is-primary:hover {
 }
 
 .modal-body {
-  padding: 18px;
+  padding: 14px;
 }
 
 .admin-form-grid {
   display: grid;
-  gap: 14px;
+  gap: 10px;
 }
 
 .admin-form-grid-2 {
   display: grid;
-  gap: 14px;
+  gap: 10px;
 }
 
 .inline-dot {
