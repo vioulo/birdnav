@@ -51,7 +51,7 @@ bun run dev
 /admin/login
 ```
 
-## 部署
+## 直接部署
 
 生产环境建议使用 Prisma migration：
 
@@ -90,6 +90,12 @@ docker compose up -d --build
 - `bun run db:seed`
 - `bun run start`
 
+查看日志：
+
+```bash
+docker compose logs -f app
+```
+
 使用外部数据库时：
 
 ```bash
@@ -97,13 +103,69 @@ DATABASE_URL='mysql://user:password@host:3306/birdnav' \
 RUN_MIGRATIONS=false \
 RUN_SEED=false \
 docker compose up -d --no-deps --build app
+```
 
-----
+## 宿主 Nginx 反代
+
+`docker-compose.yml` 默认把 app 暴露到宿主 `3000` 端口。宿主 Nginx 可以反代到 `127.0.0.1:3000`：
+
+```nginx
+server {
+    listen 80;
+    server_name example.com;
+
+    location / {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+```
+
+检查并重载 Nginx：
+
+```bash
+nginx -t
+nginx -s reload
+```
+
+## 维护与升级
+
+升级前建议先备份数据库：
+
+```bash
 cd /var/www/birdnav
+docker exec birdnav-db-1 sh -c 'mysqldump -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE"' > birdnav-backup-$(date +%F-%H%M).sql
+```
 
+然后更新代码并重建 app 容器：
+
+```bash
+cd /var/www/birdnav
 docker compose stop app
+git pull
 docker compose config --quiet
 docker compose up -d --no-deps --build app
 docker compose logs -f app
-
 ```
+
+如果需要恢复备份：
+
+```bash
+docker exec -i birdnav-db-1 sh -c 'mysql -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE"' < birdnav-backup.sql
+```
+
+注意不要执行 `docker compose down -v`，除非确认可以删除数据库数据；`-v` 会删除 MySQL volume。
+
+## 更换 Favicon
+
+替换 `src/app/favicon.ico` 后重建 app 容器：
+
+```bash
+docker compose up -d --no-deps --build app
+```
+
+浏览器可能会缓存 favicon，替换后可清理缓存或强制刷新。
