@@ -87,7 +87,7 @@ docker compose up -d --build
 容器启动时默认执行：
 
 - `bun run db:migrate:deploy`
-- `bun run db:seed`
+- `bun run db:seed`，仅补齐缺失的初始化数据，不覆盖已有站点配置
 - `bun run start`
 
 查看日志：
@@ -167,5 +167,7 @@ docker exec -i birdnav-db-1 sh -c 'mysql -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" "$M
 ```bash
 docker compose up -d --no-deps --build app
 ```
+
+重建 app 会重新执行 migration 和 seed；seed 只补齐缺失的初始化数据，不会覆盖后台已有配置。
 
 浏览器可能会缓存 favicon，替换后可清理缓存或强制刷新。

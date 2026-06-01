@@ -72,7 +72,7 @@ async function main() {
   for (const [optKey, optValue] of Object.entries(defaultOptions)) {
     await prisma.option.upsert({
       where: { optKey },
-      update: { optValue },
+      update: {},
       create: { optKey, optValue },
     });
   }
