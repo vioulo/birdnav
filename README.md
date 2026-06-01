@@ -97,4 +97,13 @@ DATABASE_URL='mysql://user:password@host:3306/birdnav' \
 RUN_MIGRATIONS=false \
 RUN_SEED=false \
 docker compose up -d --no-deps --build app
+
+----
+cd /var/www/birdnav
+
+docker compose stop app
+docker compose config --quiet
+docker compose up -d --no-deps --build app
+docker compose logs -f app
+
 ```
