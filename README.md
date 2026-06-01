@@ -171,3 +171,11 @@ docker compose up -d --no-deps --build app
 重建 app 会重新执行 migration 和 seed；seed 只补齐缺失的初始化数据，不会覆盖后台已有配置。
 
 浏览器可能会缓存 favicon，替换后可清理缓存或强制刷新。
+
+## 发布版本
+```
+bun pm version patch   # 0.1.0 -> 0.1.1，修复
+bun pm version minor   # 0.1.0 -> 0.2.0，小功能
+bun pm version major   # 0.1.0 -> 1.0.0，大版本
+
+```
