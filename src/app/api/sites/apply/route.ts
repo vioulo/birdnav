@@ -5,6 +5,7 @@ import { getActionErrorMessage } from "@/lib/db-errors";
 import { prisma } from "@/lib/prisma";
 import { consumeRateLimit } from "@/lib/public-rate-limit";
 import { discoverSiteIconUrl } from "@/lib/site-icon";
+import { buildDefaultSiteSlug, createUniqueSiteSlug } from "@/lib/site-slug";
 import { parsePublicSiteApply } from "@/lib/validation";
 
 export const runtime = "nodejs";
@@ -129,11 +130,13 @@ export async function POST(request: NextRequest) {
 
   try {
     const resolvedIconUrl = iconUrl || await discoverSiteIconUrl(url);
+    const slug = await createUniqueSiteSlug(buildDefaultSiteSlug(url));
 
     await prisma.site.create({
       data: {
         catId,
         name,
+        slug,
         url,
         iconUrl: resolvedIconUrl,
         description: description || null,

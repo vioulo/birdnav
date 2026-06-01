@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react";
+import type { Prisma } from "@prisma/client";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
@@ -11,18 +12,17 @@ import { getThemeMode } from "@/lib/theme";
 export default async function SiteDetailPage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{ slug: string }>;
 }) {
-  const { id } = await params;
-  const siteId = Number(id);
-
-  if (!siteId) {
-    notFound();
-  }
+  const { slug } = await params;
+  const legacySiteId = /^\d+$/.test(slug) ? Number(slug) : null;
+  const siteWhere: Prisma.SiteWhereUniqueInput = legacySiteId
+    ? { id: legacySiteId }
+    : { slug };
 
   const [site, siteTitle, footerText, footerLinksRaw, themeMode] = await Promise.all([
     prisma.site.findUnique({
-      where: { id: siteId },
+      where: siteWhere,
       include: {
         category: true,
       },
@@ -37,6 +37,10 @@ export default async function SiteDetailPage({
     notFound();
   }
 
+  if (legacySiteId) {
+    redirect(`/site/${site.slug}`);
+  }
+
   const footerLinks = parseFooterLinks(footerLinksRaw);
   const detailStyle = {
     "--detail-color": site.category.color,
@@ -48,7 +52,7 @@ export default async function SiteDetailPage({
         title={siteTitle}
         meta={["detail node", site.category.name]}
         initialTheme={themeMode}
-        redirectTo={`/site/${site.id}`}
+        redirectTo={`/site/${site.slug}`}
       />
 
       <main className="site-main detail-main" style={detailStyle}>

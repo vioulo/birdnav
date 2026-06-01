@@ -26,6 +26,27 @@ function hashPassword(password: string) {
   return `scrypt:${salt}:${hash}`;
 }
 
+function slugifySite(input: string) {
+  return input
+    .trim()
+    .toLowerCase()
+    .replace(/^https?:\/\//, "")
+    .replace(/^www\./, "")
+    .replace(/\/$/, "")
+    .replace(/[^a-z0-9._\u4e00-\u9fa5-]/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function buildDefaultSiteSlug(url: string) {
+  try {
+    const parsedUrl = new URL(url);
+    return slugifySite(parsedUrl.hostname.replace(/^www\./i, ""));
+  } catch {
+    return slugifySite(url) || "site";
+  }
+}
+
 async function main() {
   const username = process.env.ADMIN_USERNAME || "admin";
   const existingAdmin = await prisma.user.findUnique({
@@ -76,6 +97,25 @@ async function main() {
       where: { optKey },
       update: {},
       create: { optKey, optValue },
+    });
+  }
+
+  const sitesWithoutSlugs = await prisma.site.findMany({
+    where: {
+      slug: "",
+    },
+    select: {
+      id: true,
+      url: true,
+    },
+  });
+
+  for (const site of sitesWithoutSlugs) {
+    await prisma.site.update({
+      where: { id: site.id },
+      data: {
+        slug: `${buildDefaultSiteSlug(site.url)}-${site.id}`,
+      },
     });
   }
 }

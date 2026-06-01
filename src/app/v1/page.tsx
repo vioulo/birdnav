@@ -11,6 +11,7 @@ import { getThemeMode } from "@/lib/theme";
 type V1Site = {
   id: number;
   name: string;
+  slug: string;
   url: string;
   iconUrl: string | null;
   description: string | null;
@@ -51,6 +52,7 @@ export default async function V1Page() {
           select: {
             id: true,
             name: true,
+            slug: true,
             url: true,
             iconUrl: true,
             description: true,
@@ -79,7 +81,7 @@ export default async function V1Page() {
         sites: category.sites.map((site) => ({
           id: site.id,
           name: site.name,
-          href: clickBehavior === "detail" ? `/v1/site/${site.id}` : site.url,
+          href: clickBehavior === "detail" ? `/v1/site/${site.slug}` : site.url,
           url: site.url,
           iconUrl: site.iconUrl,
           description: site.description,

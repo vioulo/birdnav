@@ -12,6 +12,7 @@ import { getThemeMode } from "@/lib/theme";
 type HomeSite = {
   id: number;
   name: string;
+  slug: string;
   url: string;
   iconUrl: string | null;
   description: string | null;
@@ -88,6 +89,7 @@ export default async function HomePage({
           select: {
             id: true,
             name: true,
+            slug: true,
             url: true,
             iconUrl: true,
             description: true,
@@ -119,7 +121,7 @@ export default async function HomePage({
     category.sites.map((site) => ({
       id: site.id,
       name: site.name,
-      href: clickBehavior === "detail" ? `/site/${site.id}` : site.url,
+      href: clickBehavior === "detail" ? `/site/${site.slug}` : site.url,
       iconUrl: site.iconUrl,
       color: category.color,
       categoryName: category.name,

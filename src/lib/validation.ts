@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import { isSiteClickBehavior } from "@/lib/options";
-import { normalizeUrl } from "@/lib/utils";
+import { normalizeUrl, slugifySite } from "@/lib/utils";
 
 const colorHexPattern = /^#([0-9a-f]{6})$/i;
 const httpUrlPattern = /^https?:\/\//i;
@@ -65,6 +65,13 @@ export const categorySchema = z.object({
 export const siteSchema = z.object({
   catId: z.coerce.number().int("请选择分类。").positive("请选择分类。"),
   name: z.string().trim().min(1, "站点名称不能为空。").max(160, "站点名称过长。"),
+  slug: z
+    .string()
+    .trim()
+    .max(191, "Slug 过长。")
+    .regex(/^[a-z0-9._\u4e00-\u9fa5-]*$/i, "Slug 仅支持字母、数字、中文、点、下划线和短横线。")
+    .optional()
+    .or(z.literal("")),
   url: z
     .string()
     .trim()
@@ -173,10 +180,12 @@ export function parseSiteForm(formData: FormData) {
   const url = normalizeUrl(String(formData.get("url") ?? ""));
   const iconUrl = normalizeUrl(String(formData.get("iconUrl") ?? ""));
   const featureImage = normalizeUrl(String(formData.get("featureImage") ?? ""));
+  const slug = slugifySite(String(formData.get("slug") ?? ""));
 
   return siteSchema.safeParse({
     catId: formData.get("catId"),
     name: formData.get("name"),
+    slug,
     url,
     iconUrl,
     description: formData.get("description"),

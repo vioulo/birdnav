@@ -13,6 +13,7 @@ import { recordAuditLog } from "@/lib/audit";
 import { getActionErrorMessage } from "@/lib/db-errors";
 import { prisma } from "@/lib/prisma";
 import { discoverSiteIconUrl } from "@/lib/site-icon";
+import { buildDefaultSiteSlug, createUniqueSiteSlug, isSiteSlugAvailable } from "@/lib/site-slug";
 import { parseSiteForm } from "@/lib/validation";
 
 const PAGE_SIZE = 20;
@@ -23,6 +24,7 @@ type SiteRow = {
   id: number;
   catId: number;
   name: string;
+  slug: string;
   url: string;
   iconUrl: string | null;
   description: string | null;
@@ -275,6 +277,7 @@ async function createSite(formData: FormData) {
   const {
     catId,
     name,
+    slug,
     url,
     iconUrl,
     description,
@@ -286,6 +289,19 @@ async function createSite(formData: FormData) {
   } = parsed.data;
 
   let createdSite;
+  const siteSlug = slug || await createUniqueSiteSlug(buildDefaultSiteSlug(url));
+
+  if (slug && !(await isSiteSlugAvailable(siteSlug))) {
+    redirect(
+      buildSitesFeedbackHref(
+        page,
+        "error",
+        "站点 Slug 已存在，请换一个。",
+        "new",
+        filters,
+      ),
+    );
+  }
 
   try {
     const resolvedIconUrl = iconUrl || await discoverSiteIconUrl(url);
@@ -294,6 +310,7 @@ async function createSite(formData: FormData) {
       data: {
         catId,
         name,
+        slug: siteSlug,
         url,
         iconUrl: resolvedIconUrl,
         description: description || null,
@@ -327,6 +344,7 @@ async function createSite(formData: FormData) {
     summary: `创建站点 ${createdSite.name}`,
     payload: {
       catId: createdSite.catId,
+      slug: createdSite.slug,
       autoDiscoveredIcon: !iconUrl && !!createdSite.iconUrl,
       isFeatured: createdSite.isFeatured,
       isPublished: createdSite.isPublished,
@@ -418,11 +436,21 @@ async function bulkImportSites(formData: FormData) {
     );
   }
 
-  let preparedSites: Array<{ name: string; url: string; iconUrl: string | null }>;
+  let preparedSites: Array<{ name: string; slug: string; url: string; iconUrl: string | null }>;
 
   try {
+    const reservedSlugs = new Set<string>();
+    const sitesWithSlugs = [];
+
+    for (const site of sitesToCreate) {
+      const slug = await createUniqueSiteSlug(buildDefaultSiteSlug(site.url), reservedSlugs);
+
+      reservedSlugs.add(slug);
+      sitesWithSlugs.push({ ...site, slug });
+    }
+
     preparedSites = await mapWithConcurrency(
-      sitesToCreate,
+      sitesWithSlugs,
       BULK_IMPORT_ICON_CONCURRENCY,
       async (site) => ({
         ...site,
@@ -448,6 +476,7 @@ async function bulkImportSites(formData: FormData) {
       data: preparedSites.map((site) => ({
         catId,
         name: site.name.slice(0, 160),
+        slug: site.slug,
         url: site.url,
         iconUrl: site.iconUrl,
         isPublished,
@@ -530,6 +559,7 @@ async function updateSite(formData: FormData) {
   const {
     catId,
     name,
+    slug,
     url,
     iconUrl,
     description,
@@ -541,6 +571,20 @@ async function updateSite(formData: FormData) {
 
   let updatedSite;
 
+  const siteSlug = slug || buildDefaultSiteSlug(url);
+
+  if (!(await isSiteSlugAvailable(siteSlug, id))) {
+    redirect(
+      buildSitesFeedbackHref(
+        page,
+        "error",
+        "站点 Slug 已存在，请换一个。",
+        undefined,
+        filters,
+      ),
+    );
+  }
+
   try {
     const resolvedIconUrl = iconUrl || await discoverSiteIconUrl(url);
 
@@ -549,6 +593,7 @@ async function updateSite(formData: FormData) {
       data: {
         catId,
         name,
+        slug: siteSlug,
         url,
         iconUrl: resolvedIconUrl,
         description: description || null,
@@ -582,6 +627,7 @@ async function updateSite(formData: FormData) {
     summary: `更新站点 ${updatedSite.name}`,
     payload: {
       catId: updatedSite.catId,
+      slug: updatedSite.slug,
       isFeatured: updatedSite.isFeatured,
       isPublished: updatedSite.isPublished,
     },
@@ -682,6 +728,7 @@ export default async function AdminSitesPage({
       ? {
           OR: [
             { name: { contains: keyword } },
+            { slug: { contains: keyword } },
             { url: { contains: keyword } },
             { description: { contains: keyword } },
           ],
@@ -767,7 +814,7 @@ export default async function AdminSitesPage({
               type="search"
               name="q"
               defaultValue={keyword}
-              placeholder="关键词筛选名称、链接、描述..."
+              placeholder="关键词筛选名称、Slug、链接、描述..."
             />
             <select className="input admin-data-table-filter-select is-category" name="cat" defaultValue={filters.categoryId}>
               <option value="all">全部分类</option>
@@ -822,6 +869,7 @@ export default async function AdminSitesPage({
                   <span className="admin-record-main">
                     <strong>{site.name}</strong>
                     <span>{site.url}</span>
+                    <span>/site/{site.slug}</span>
                   </span>
                   <span className="admin-color-pill">
                     <span
@@ -858,6 +906,16 @@ export default async function AdminSitesPage({
                     <label className="admin-field">
                       <span>链接</span>
                       <input className="input" name="url" defaultValue={site.url} required />
+                    </label>
+                    <label className="admin-field">
+                      <span>详情 Slug</span>
+                      <input
+                        className="input"
+                        name="slug"
+                        defaultValue={site.slug}
+                        placeholder="github.com"
+                        required
+                      />
                     </label>
                     <label className="admin-field">
                       <span>站点 Icon</span>
@@ -1010,6 +1068,10 @@ export default async function AdminSitesPage({
               <label className="block space-y-2">
                 <span className="text-sm font-medium">链接</span>
                 <input className="input" name="url" placeholder="https://github.com" required />
+              </label>
+              <label className="block space-y-2">
+                <span className="text-sm font-medium">详情 Slug</span>
+                <input className="input" name="slug" placeholder="留空默认使用主域名，例如 github.com" />
               </label>
               <label className="block space-y-2">
                 <span className="text-sm font-medium">站点 Icon</span>

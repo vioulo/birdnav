@@ -41,6 +41,7 @@ model Site {
   id          Int       @id @default(autoincrement())
   catId       Int       @map("cat_id")
   name        String    @db.VarChar(160)
+  slug        String    @unique @db.VarChar(191)
   url         String    @db.VarChar(500)
   iconUrl     String?   @map("icon_url") @db.VarChar(500)
   description String?   @db.VarChar(500)

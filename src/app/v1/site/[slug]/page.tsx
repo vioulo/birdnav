@@ -1,5 +1,6 @@
+import type { Prisma } from "@prisma/client";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { ExternalLink, MoveLeft } from "lucide-react";
 
 import { V1Shell } from "@/components/v1-shell";
@@ -10,19 +11,18 @@ import { getThemeMode } from "@/lib/theme";
 export default async function V1SiteDetailPage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{ slug: string }>;
 }) {
-  const { id } = await params;
-  const siteId = Number(id);
-
-  if (!siteId) {
-    notFound();
-  }
+  const { slug } = await params;
+  const legacySiteId = /^\d+$/.test(slug) ? Number(slug) : null;
+  const siteWhere: Prisma.SiteWhereUniqueInput = legacySiteId
+    ? { id: legacySiteId }
+    : { slug };
 
   const [site, siteTitle, siteSubtitle, footerText, footerLinksRaw, themeMode] =
     await Promise.all([
       prisma.site.findUnique({
-        where: { id: siteId },
+        where: siteWhere,
         include: {
           category: true,
         },
@@ -36,6 +36,10 @@ export default async function V1SiteDetailPage({
 
   if (!site || !site.isPublished) {
     notFound();
+  }
+
+  if (legacySiteId) {
+    redirect(`/v1/site/${site.slug}`);
   }
 
   const footerLinks = parseFooterLinks(footerLinksRaw);
