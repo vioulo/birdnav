@@ -17,14 +17,21 @@ BirdNav 是一个基于 Next.js、Prisma 和 MySQL 的导航站项目，包含�
 复制 `.env.example` 并按环境修改：
 
 ```bash
-DATABASE_URL="mysql://user:password@127.0.0.1:3306/birdnav"
+DATABASE_URL="mysql://birdnav:replace-with-db-password@db:3306/birdnav"
+MYSQL_DATABASE="birdnav"
+MYSQL_USER="birdnav"
+MYSQL_PASSWORD="replace-with-db-password"
+MYSQL_ROOT_PASSWORD="replace-with-root-password"
 ADMIN_USERNAME="admin"
 # ADMIN_PASSWORD="replace-with-a-strong-password"
 ```
 
 说明：
 
-- `DATABASE_URL` 是必须配置的数据库连接。
+- `DATABASE_URL` 是 app 和 Prisma 使用的数据库连接。
+- Docker 部署时，`DATABASE_URL` 使用 Compose 服务名 `db` 作为主机名；本机直连数据库时可改成 `127.0.0.1`。
+- `MYSQL_DATABASE` / `MYSQL_USER` / `MYSQL_PASSWORD` / `MYSQL_ROOT_PASSWORD` 用于初始化随 compose 启动的 MySQL 容器。
+- 使用内置 MySQL 时，`DATABASE_URL` 里的数据库名、用户名、密码需要和 `MYSQL_DATABASE` / `MYSQL_USER` / `MYSQL_PASSWORD` 保持一致。
 - `ADMIN_USERNAME` 用于首次初始化管理员账号，默认可用 `admin`。
 - `ADMIN_PASSWORD` 只在 `db:seed` 首次创建管理员时使用；不设置时会生成随机密码并输出到日志。
 
@@ -59,13 +66,21 @@ bun run start
 
 ## Docker 部署
 
-项目提供 `Dockerfile` 和 `docker-compose.yml`。管理员初始账号不写入镜像，部署时通过环境变量传入：
+项目提供 `Dockerfile` 和 `docker-compose.yml`。部署时建议先写入 `.env`：
 
 ```bash
-ADMIN_USERNAME=admin \
-ADMIN_PASSWORD='replace-with-a-strong-password' \
-MYSQL_PASSWORD='replace-with-db-password' \
-MYSQL_ROOT_PASSWORD='replace-with-root-password' \
+DATABASE_URL='mysql://birdnav:replace-with-db-password@db:3306/birdnav'
+MYSQL_DATABASE='birdnav'
+MYSQL_USER='birdnav'
+MYSQL_PASSWORD='replace-with-db-password'
+MYSQL_ROOT_PASSWORD='replace-with-root-password'
+ADMIN_USERNAME='admin'
+ADMIN_PASSWORD='replace-with-a-strong-password'
+```
+
+然后启动：
+
+```bash
 docker compose up -d --build
 ```
 
@@ -81,5 +96,5 @@ docker compose up -d --build
 DATABASE_URL='mysql://user:password@host:3306/birdnav' \
 RUN_MIGRATIONS=false \
 RUN_SEED=false \
-docker compose up -d --build app
+docker compose up -d --no-deps --build app
 ```

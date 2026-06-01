@@ -5,8 +5,8 @@ services:
     environment:
       MYSQL_DATABASE: ${MYSQL_DATABASE:-birdnav}
       MYSQL_USER: ${MYSQL_USER:-birdnav}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-birdnav}
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-birdnav_root}
+      MYSQL_PASSWORD: "${MYSQL_PASSWORD:?MYSQL_PASSWORD is required}"
+      MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD is required}"
     volumes:
       - birdnav-mysql:/var/lib/mysql
     healthcheck:
@@ -19,13 +19,13 @@ services:
     build:
       context: .
       args:
-        DATABASE_URL: mysql://${MYSQL_USER:-birdnav}:${MYSQL_PASSWORD:-birdnav}@db:3306/${MYSQL_DATABASE:-birdnav}
+        DATABASE_URL: "${DATABASE_URL:?DATABASE_URL is required}"
     restart: unless-stopped
     depends_on:
       db:
         condition: service_healthy
     environment:
-      DATABASE_URL: mysql://${MYSQL_USER:-birdnav}:${MYSQL_PASSWORD:-birdnav}@db:3306/${MYSQL_DATABASE:-birdnav}
+      DATABASE_URL: "${DATABASE_URL:?DATABASE_URL is required}"
       ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
       RUN_MIGRATIONS: ${RUN_MIGRATIONS:-true}
