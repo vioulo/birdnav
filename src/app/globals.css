@@ -2202,12 +2202,37 @@ html[data-theme="dark"] .detail-button.is-primary:hover {
 .admin-data-table-search {
   display: flex;
   flex: 1 1 420px;
+  flex-wrap: wrap;
   justify-content: flex-end;
-  gap: 8px;
+  gap: 6px;
+}
+
+.admin-data-table-search .input {
+  min-height: 36px;
+  padding: 0.48rem 0.65rem;
+  font-size: 0.82rem;
+  line-height: 1rem;
+}
+
+.admin-data-table-search .button-secondary {
+  min-height: 36px;
+  padding: 0.48rem 0.72rem;
+  font-size: 0.82rem;
 }
 
 .admin-data-table-search-input {
-  max-width: 360px;
+  flex: 1 1 240px;
+  max-width: 320px;
+}
+
+.admin-data-table-filter-select {
+  flex: 0 0 104px;
+  max-width: 104px;
+}
+
+.admin-data-table-filter-select.is-category {
+  flex-basis: 128px;
+  max-width: 128px;
 }
 
 .admin-data-table-columns {
@@ -2691,6 +2716,13 @@ html[data-theme="dark"] .detail-button.is-primary:hover {
   }
 
   .admin-data-table-search-input {
+    flex-basis: 100%;
+    max-width: none;
+  }
+
+  .admin-data-table-filter-select,
+  .admin-data-table-filter-select.is-category {
+    flex: 1 1 110px;
     max-width: none;
   }
 

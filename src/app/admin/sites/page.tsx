@@ -42,46 +42,92 @@ type SiteCategory = {
   name: string;
 };
 
-function buildSitesHref(page: number, keyword = "") {
+type SiteFeaturedFilter = "all" | "featured" | "normal";
+type SitePublishedFilter = "all" | "published" | "hidden";
+
+type SiteFilters = {
+  keyword: string;
+  categoryId: string;
+  featured: SiteFeaturedFilter;
+  published: SitePublishedFilter;
+};
+
+const defaultSiteFilters: SiteFilters = {
+  keyword: "",
+  categoryId: "all",
+  featured: "all",
+  published: "all",
+};
+
+function normalizeFeaturedFilter(value: FormDataEntryValue | string | null | undefined): SiteFeaturedFilter {
+  return value === "featured" || value === "normal" ? value : "all";
+}
+
+function normalizePublishedFilter(value: FormDataEntryValue | string | null | undefined): SitePublishedFilter {
+  return value === "published" || value === "hidden" ? value : "all";
+}
+
+function readSiteFiltersFromForm(formData: FormData): SiteFilters {
+  return {
+    keyword: String(formData.get("q") || "").trim(),
+    categoryId: String(formData.get("filterCatId") || "all"),
+    featured: normalizeFeaturedFilter(formData.get("featured")),
+    published: normalizePublishedFilter(formData.get("published")),
+  };
+}
+
+function appendSiteFilters(searchParams: URLSearchParams, filters: SiteFilters) {
+  if (filters.keyword) {
+    searchParams.set("q", filters.keyword);
+  }
+
+  if (filters.categoryId !== "all") {
+    searchParams.set("cat", filters.categoryId);
+  }
+
+  if (filters.featured !== "all") {
+    searchParams.set("featured", filters.featured);
+  }
+
+  if (filters.published !== "all") {
+    searchParams.set("published", filters.published);
+  }
+}
+
+function buildSitesHref(page: number, filters: SiteFilters = defaultSiteFilters) {
   const searchParams = new URLSearchParams();
 
   if (page > 1) {
     searchParams.set("page", String(page));
   }
 
-  if (keyword) {
-    searchParams.set("q", keyword);
-  }
+  appendSiteFilters(searchParams, filters);
 
   const query = searchParams.toString();
   return query ? `/admin/sites?${query}` : "/admin/sites";
 }
 
-function buildSitesModalHref(page: number, keyword = "") {
+function buildSitesModalHref(page: number, filters: SiteFilters = defaultSiteFilters) {
   const searchParams = new URLSearchParams();
 
   if (page > 1) {
     searchParams.set("page", String(page));
   }
 
-  if (keyword) {
-    searchParams.set("q", keyword);
-  }
+  appendSiteFilters(searchParams, filters);
 
   searchParams.set("modal", "new");
   return `/admin/sites?${searchParams.toString()}`;
 }
 
-function buildSitesBulkModalHref(page: number, keyword = "") {
+function buildSitesBulkModalHref(page: number, filters: SiteFilters = defaultSiteFilters) {
   const searchParams = new URLSearchParams();
 
   if (page > 1) {
     searchParams.set("page", String(page));
   }
 
-  if (keyword) {
-    searchParams.set("q", keyword);
-  }
+  appendSiteFilters(searchParams, filters);
 
   searchParams.set("modal", "bulk");
   return `/admin/sites?${searchParams.toString()}`;
@@ -92,7 +138,7 @@ function buildSitesFeedbackHref(
   type: "success" | "error",
   message: string,
   modal?: "new" | "bulk",
-  keyword = "",
+  filters: SiteFilters = defaultSiteFilters,
 ) {
   const searchParams = new URLSearchParams();
 
@@ -100,9 +146,7 @@ function buildSitesFeedbackHref(
     searchParams.set("page", String(page));
   }
 
-  if (keyword) {
-    searchParams.set("q", keyword);
-  }
+  appendSiteFilters(searchParams, filters);
 
   if (modal) {
     searchParams.set("modal", modal);
@@ -212,7 +256,7 @@ async function createSite(formData: FormData) {
   "use server";
 
   const admin = await requireAdmin();
-  const keyword = String(formData.get("q") || "").trim();
+  const filters = readSiteFiltersFromForm(formData);
 
   const parsed = parseSiteForm(formData);
 
@@ -223,7 +267,7 @@ async function createSite(formData: FormData) {
         "error",
         parsed.error.issues[0]?.message || "站点信息无效。",
         "new",
-        keyword,
+        filters,
       ),
     );
   }
@@ -266,7 +310,7 @@ async function createSite(formData: FormData) {
         "error",
         getActionErrorMessage(error, "创建站点失败。"),
         "new",
-        keyword,
+        filters,
       ),
     );
   }
@@ -289,7 +333,7 @@ async function createSite(formData: FormData) {
     },
   });
 
-  redirect(buildSitesFeedbackHref(page, "success", "站点创建成功。", undefined, keyword));
+  redirect(buildSitesFeedbackHref(page, "success", "站点创建成功。", undefined, filters));
 }
 
 async function bulkImportSites(formData: FormData) {
@@ -297,13 +341,13 @@ async function bulkImportSites(formData: FormData) {
 
   const admin = await requireAdmin();
   const page = Math.max(1, Number(formData.get("page") || 1));
-  const keyword = String(formData.get("q") || "").trim();
+  const filters = readSiteFiltersFromForm(formData);
   const catId = Number(formData.get("catId"));
   const rawLinks = String(formData.get("links") || "");
   const isPublished = formData.get("isPublished") === "on";
 
   if (!catId) {
-    redirect(buildSitesFeedbackHref(page, "error", "请选择批量导入分类。", "bulk", keyword));
+    redirect(buildSitesFeedbackHref(page, "error", "请选择批量导入分类。", "bulk", filters));
   }
 
   const category = await prisma.category.findUnique({
@@ -312,7 +356,7 @@ async function bulkImportSites(formData: FormData) {
   });
 
   if (!category) {
-    redirect(buildSitesFeedbackHref(page, "error", "分类不存在。", "bulk", keyword));
+    redirect(buildSitesFeedbackHref(page, "error", "分类不存在。", "bulk", filters));
   }
 
   const lines = rawLinks
@@ -321,7 +365,7 @@ async function bulkImportSites(formData: FormData) {
     .filter(Boolean);
 
   if (!lines.length) {
-    redirect(buildSitesFeedbackHref(page, "error", "请至少粘贴 1 个链接。", "bulk", keyword));
+    redirect(buildSitesFeedbackHref(page, "error", "请至少粘贴 1 个链接。", "bulk", filters));
   }
 
   if (lines.length > BULK_IMPORT_LIMIT) {
@@ -331,7 +375,7 @@ async function bulkImportSites(formData: FormData) {
         "error",
         `一次最多导入 ${BULK_IMPORT_LIMIT} 个链接。`,
         "bulk",
-        keyword,
+        filters,
       ),
     );
   }
@@ -344,7 +388,7 @@ async function bulkImportSites(formData: FormData) {
   );
 
   if (!uniqueSites.length) {
-    redirect(buildSitesFeedbackHref(page, "error", "没有解析到合法链接。", "bulk", keyword));
+    redirect(buildSitesFeedbackHref(page, "error", "没有解析到合法链接。", "bulk", filters));
   }
 
   const existingSites = await prisma.site.findMany({
@@ -369,7 +413,7 @@ async function bulkImportSites(formData: FormData) {
         "success",
         `没有新增站点，已跳过 ${uniqueSites.length} 个重复链接。`,
         undefined,
-        keyword,
+        filters,
       ),
     );
   }
@@ -392,7 +436,7 @@ async function bulkImportSites(formData: FormData) {
         "error",
         getActionErrorMessage(error, "批量获取图标失败。"),
         "bulk",
-        keyword,
+        filters,
       ),
     );
   }
@@ -419,7 +463,7 @@ async function bulkImportSites(formData: FormData) {
         "error",
         getActionErrorMessage(error, "批量导入站点失败。"),
         "bulk",
-        keyword,
+        filters,
       ),
     );
   }
@@ -456,7 +500,7 @@ async function bulkImportSites(formData: FormData) {
       "success",
       `批量导入完成：新增 ${createdCount} 个，跳过重复 ${duplicateCount} 个，失败 ${failedCount} 个。`,
       undefined,
-      keyword,
+      filters,
     ),
   );
 }
@@ -468,7 +512,7 @@ async function updateSite(formData: FormData) {
 
   const id = Number(formData.get("id"));
   const page = Math.max(1, Number(formData.get("page") || 1));
-  const keyword = String(formData.get("q") || "").trim();
+  const filters = readSiteFiltersFromForm(formData);
   const parsed = parseSiteForm(formData);
 
   if (!id || !parsed.success) {
@@ -478,7 +522,7 @@ async function updateSite(formData: FormData) {
         "error",
         parsed.success ? "站点不存在。" : parsed.error.issues[0]?.message || "站点信息无效。",
         undefined,
-        keyword,
+        filters,
       ),
     );
   }
@@ -521,7 +565,7 @@ async function updateSite(formData: FormData) {
         "error",
         getActionErrorMessage(error, "保存站点失败。"),
         undefined,
-        keyword,
+        filters,
       ),
     );
   }
@@ -543,7 +587,7 @@ async function updateSite(formData: FormData) {
     },
   });
 
-  redirect(buildSitesFeedbackHref(page, "success", "站点保存成功。", undefined, keyword));
+  redirect(buildSitesFeedbackHref(page, "success", "站点保存成功。", undefined, filters));
 }
 
 async function deleteSite(formData: FormData) {
@@ -553,10 +597,10 @@ async function deleteSite(formData: FormData) {
 
   const id = Number(formData.get("id"));
   const page = Math.max(1, Number(formData.get("page") || 1));
-  const keyword = String(formData.get("q") || "").trim();
+  const filters = readSiteFiltersFromForm(formData);
 
   if (!id) {
-    redirect(buildSitesFeedbackHref(page, "error", "站点不存在。", undefined, keyword));
+    redirect(buildSitesFeedbackHref(page, "error", "站点不存在。", undefined, filters));
   }
 
   const site = await prisma.site.findUnique({
@@ -564,7 +608,7 @@ async function deleteSite(formData: FormData) {
   });
 
   if (!site) {
-    redirect(buildSitesFeedbackHref(page, "error", "站点不存在。", undefined, keyword));
+    redirect(buildSitesFeedbackHref(page, "error", "站点不存在。", undefined, filters));
   }
 
   try {
@@ -578,7 +622,7 @@ async function deleteSite(formData: FormData) {
         "error",
         getActionErrorMessage(error, "删除站点失败。"),
         undefined,
-        keyword,
+        filters,
       ),
     );
   }
@@ -600,7 +644,7 @@ async function deleteSite(formData: FormData) {
     },
   });
 
-  redirect(buildSitesFeedbackHref(page, "success", "站点删除成功。", undefined, keyword));
+  redirect(buildSitesFeedbackHref(page, "success", "站点删除成功。", undefined, filters));
 }
 
 export default async function AdminSitesPage({
@@ -612,6 +656,9 @@ export default async function AdminSitesPage({
     success?: string;
     error?: string;
     q?: string;
+    cat?: string;
+    featured?: string;
+    published?: string;
   }>;
 }) {
   const admin = await requireAdmin();
@@ -621,19 +668,31 @@ export default async function AdminSitesPage({
   const isBulkModalOpen = params.modal === "bulk";
   const successMessage = params.success?.trim();
   const errorMessage = params.error?.trim();
-  const keyword = params.q?.trim() || "";
+  const filters: SiteFilters = {
+    keyword: params.q?.trim() || "",
+    categoryId: params.cat?.trim() || "all",
+    featured: normalizeFeaturedFilter(params.featured),
+    published: normalizePublishedFilter(params.published),
+  };
+  const keyword = filters.keyword;
+  const selectedCategoryId = filters.categoryId !== "all" ? Number(filters.categoryId) : null;
   const skip = (page - 1) * PAGE_SIZE;
-  const siteWhere: Prisma.SiteWhereInput = keyword
-    ? {
-        OR: [
-          { name: { contains: keyword } },
-          { url: { contains: keyword } },
-          { iconUrl: { contains: keyword } },
-          { description: { contains: keyword } },
-          { category: { is: { name: { contains: keyword } } } },
-        ],
-      }
-    : {};
+  const siteWhere: Prisma.SiteWhereInput = {
+    ...(keyword
+      ? {
+          OR: [
+            { name: { contains: keyword } },
+            { url: { contains: keyword } },
+            { description: { contains: keyword } },
+          ],
+        }
+      : {}),
+    ...(selectedCategoryId ? { catId: selectedCategoryId } : {}),
+    ...(filters.featured === "featured" ? { isFeatured: true } : {}),
+    ...(filters.featured === "normal" ? { isFeatured: false } : {}),
+    ...(filters.published === "published" ? { isPublished: true } : {}),
+    ...(filters.published === "hidden" ? { isPublished: false } : {}),
+  };
 
   const [categories, total, sites]: [SiteCategory[], number, SiteRow[]] = await Promise.all([
     prisma.category.findMany({
@@ -662,6 +721,12 @@ export default async function AdminSitesPage({
   ]);
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const activeFilterCount = [
+    filters.keyword,
+    filters.categoryId !== "all",
+    filters.featured !== "all",
+    filters.published !== "all",
+  ].filter(Boolean).length;
 
   return (
     <AdminShell currentPath="/admin/sites" username={admin.username}>
@@ -673,15 +738,15 @@ export default async function AdminSitesPage({
           <>
             <span>total {total}</span>
             <span>page {page}/{totalPages}</span>
-            {keyword ? <span>filter {keyword}</span> : <span>all records</span>}
+            {activeFilterCount ? <span>{activeFilterCount} filters</span> : <span>all records</span>}
           </>
         }
         actions={
           <div className="list-actions">
-            <Link className="button-secondary" href={buildSitesBulkModalHref(page, keyword)}>
+            <Link className="button-secondary" href={buildSitesBulkModalHref(page, filters)}>
               批量导入
             </Link>
-            <Link className="button-primary" href={buildSitesModalHref(page, keyword)}>
+            <Link className="button-primary" href={buildSitesModalHref(page, filters)}>
               新建站点
             </Link>
           </div>
@@ -702,12 +767,30 @@ export default async function AdminSitesPage({
               type="search"
               name="q"
               defaultValue={keyword}
-              placeholder="关键词筛选站点、链接、分类..."
+              placeholder="关键词筛选名称、链接、描述..."
             />
+            <select className="input admin-data-table-filter-select is-category" name="cat" defaultValue={filters.categoryId}>
+              <option value="all">全部分类</option>
+              {categories.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.name}
+                </option>
+              ))}
+            </select>
+            <select className="input admin-data-table-filter-select" name="featured" defaultValue={filters.featured}>
+              <option value="all">全部推广</option>
+              <option value="featured">已推广</option>
+              <option value="normal">未推广</option>
+            </select>
+            <select className="input admin-data-table-filter-select" name="published" defaultValue={filters.published}>
+              <option value="all">全部发布</option>
+              <option value="published">已发布</option>
+              <option value="hidden">已隐藏</option>
+            </select>
             <button className="button-secondary" type="submit">
               筛选
             </button>
-            {keyword ? (
+            {activeFilterCount ? (
               <Link className="button-secondary" href="/admin/sites">
                 清除
               </Link>
@@ -764,6 +847,9 @@ export default async function AdminSitesPage({
                   <input type="hidden" name="id" value={site.id} />
                   <input type="hidden" name="page" value={page} />
                   <input type="hidden" name="q" value={keyword} />
+                  <input type="hidden" name="filterCatId" value={filters.categoryId} />
+                  <input type="hidden" name="featured" value={filters.featured} />
+                  <input type="hidden" name="published" value={filters.published} />
                   <div className="admin-edit-grid">
                     <label className="admin-field">
                       <span>站点名称</span>
@@ -855,7 +941,7 @@ export default async function AdminSitesPage({
           <div className="pager-links">
             <Link
               className="button-secondary"
-              href={page > 1 ? buildSitesHref(page - 1, keyword) : buildSitesHref(1, keyword)}
+              href={page > 1 ? buildSitesHref(page - 1, filters) : buildSitesHref(1, filters)}
             >
               上一页
             </Link>
@@ -863,8 +949,8 @@ export default async function AdminSitesPage({
               className="button-secondary"
               href={
                 page < totalPages
-                  ? buildSitesHref(page + 1, keyword)
-                  : buildSitesHref(totalPages, keyword)
+                  ? buildSitesHref(page + 1, filters)
+                  : buildSitesHref(totalPages, filters)
               }
             >
               下一页
@@ -875,20 +961,23 @@ export default async function AdminSitesPage({
 
       {isCreateModalOpen ? (
         <div className="modal-overlay">
-          <ModalEscClose href={buildSitesHref(page, keyword)} />
+          <ModalEscClose href={buildSitesHref(page, filters)} />
           <div className="modal-card">
             <div className="modal-header">
               <div>
                 <p className="eyebrow">Create</p>
                 <h3 className="mt-1 text-xl font-semibold">新建站点</h3>
               </div>
-              <Link className="button-secondary" href={buildSitesHref(page, keyword)}>
+              <Link className="button-secondary" href={buildSitesHref(page, filters)}>
                 关闭
               </Link>
             </div>
             <form action={createSite} className="modal-body admin-form-grid">
               <input type="hidden" name="page" value={page} />
               <input type="hidden" name="q" value={keyword} />
+              <input type="hidden" name="filterCatId" value={filters.categoryId} />
+              <input type="hidden" name="featured" value={filters.featured} />
+              <input type="hidden" name="published" value={filters.published} />
               <div className="admin-form-grid-2">
                 <label className="block space-y-2">
                   <span className="text-sm font-medium">所属分类</span>
@@ -943,7 +1032,7 @@ export default async function AdminSitesPage({
                 </label>
               </div>
               <div className="flex justify-end gap-2">
-                <Link className="button-secondary" href={buildSitesHref(page, keyword)}>
+                <Link className="button-secondary" href={buildSitesHref(page, filters)}>
                   取消
                 </Link>
                 <button className="button-primary" type="submit">
@@ -957,20 +1046,23 @@ export default async function AdminSitesPage({
 
       {isBulkModalOpen ? (
         <div className="modal-overlay">
-          <ModalEscClose href={buildSitesHref(page, keyword)} />
+          <ModalEscClose href={buildSitesHref(page, filters)} />
           <div className="modal-card">
             <div className="modal-header">
               <div>
                 <p className="eyebrow">Bulk Import</p>
                 <h3 className="mt-1 text-xl font-semibold">批量导入站点</h3>
               </div>
-              <Link className="button-secondary" href={buildSitesHref(page, keyword)}>
+              <Link className="button-secondary" href={buildSitesHref(page, filters)}>
                 关闭
               </Link>
             </div>
             <form action={bulkImportSites} className="modal-body admin-form-grid">
               <input type="hidden" name="page" value={page} />
               <input type="hidden" name="q" value={keyword} />
+              <input type="hidden" name="filterCatId" value={filters.categoryId} />
+              <input type="hidden" name="featured" value={filters.featured} />
+              <input type="hidden" name="published" value={filters.published} />
               <div className="admin-form-grid-2">
                 <label className="block space-y-2">
                   <span className="text-sm font-medium">所属分类</span>
@@ -1003,7 +1095,7 @@ export default async function AdminSitesPage({
                 支持纯链接或 名称|链接。纯链接会自动用域名生成名称，并尝试抓取站点 icon。
               </p>
               <div className="flex justify-end gap-2">
-                <Link className="button-secondary" href={buildSitesHref(page, keyword)}>
+                <Link className="button-secondary" href={buildSitesHref(page, filters)}>
                   取消
                 </Link>
                 <button className="button-primary" type="submit">
