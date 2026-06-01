@@ -2,6 +2,10 @@ FROM oven/bun:1.2 AS deps
 
 WORKDIR /app
 
+RUN apt-get update -y \
+  && apt-get install -y openssl ca-certificates \
+  && rm -rf /var/lib/apt/lists/*
+
 COPY package.json bun.lock ./
 RUN bun install --frozen-lockfile
 
@@ -21,12 +25,16 @@ FROM oven/bun:1.2-slim AS runner
 
 WORKDIR /app
 
+RUN apt-get update -y \
+  && apt-get install -y openssl ca-certificates \
+  && rm -rf /var/lib/apt/lists/*
+
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV HOSTNAME=0.0.0.0
 ENV PORT=3000
 
-COPY --from=deps /app/node_modules ./node_modules
+COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/prisma ./prisma
