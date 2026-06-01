@@ -803,11 +803,15 @@ html[data-theme="dark"] .promo-hero:hover {
 }
 
 .link-pill-name {
+  display: inline-flex;
+  align-items: center;
+  align-self: stretch;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   padding: 0 6px 0 10px;
+  line-height: 1.35;
 }
 
 .link-pill-arrow {
