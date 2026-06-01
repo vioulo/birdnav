@@ -112,6 +112,10 @@ export default async function HomePage({
           slug: category.slug,
           color: category.color,
         }))}
+        applyCategories={categories.map((category) => ({
+          id: category.id,
+          name: category.name,
+        }))}
         items={allItems}
         initialCategory={selectedCategory}
         initialSearch={search}

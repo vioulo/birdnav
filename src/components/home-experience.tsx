@@ -14,6 +14,10 @@ type HomeExperienceProps = {
     slug: string;
     color: string;
   }>;
+  applyCategories: Array<{
+    id: number;
+    name: string;
+  }>;
   items: Array<{
     id: number;
     name: string;
@@ -36,6 +40,7 @@ type HomeExperienceProps = {
 
 export function HomeExperience({
   categories,
+  applyCategories,
   items,
   initialCategory,
   initialSearch,
@@ -78,10 +83,7 @@ export function HomeExperience({
           />
         </div>
         <SiteApplyDialog
-          categories={categories.map((category) => ({
-            id: category.id,
-            name: category.name,
-          }))}
+          categories={applyCategories}
         />
       </SiteHeader>
 
