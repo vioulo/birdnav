@@ -60,6 +60,16 @@ function getUrlLookupVariants(url: string) {
   return [url];
 }
 
+async function getNextSiteSortOrder() {
+  const aggregate = await prisma.site.aggregate({
+    _max: {
+      sortOrder: true,
+    },
+  });
+
+  return (aggregate._max.sortOrder ?? 0) + 10;
+}
+
 export async function POST(request: NextRequest) {
   const rateLimit = await consumeRateLimit(getClientScope(request), APPLY_RATE_LIMITS);
 
@@ -131,6 +141,7 @@ export async function POST(request: NextRequest) {
   try {
     const resolvedIconUrl = iconUrl || await discoverSiteIconUrl(url);
     const slug = await createUniqueSiteSlug(buildDefaultSiteSlug(url));
+    const sortOrder = await getNextSiteSortOrder();
 
     await prisma.site.create({
       data: {
@@ -142,7 +153,7 @@ export async function POST(request: NextRequest) {
         description: description || null,
         isFeatured: false,
         featureImage: null,
-        sortOrder: 0,
+        sortOrder,
         isPublished: false,
       },
     });

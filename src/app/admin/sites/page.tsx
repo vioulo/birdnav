@@ -231,6 +231,16 @@ function getImportUrlLookupVariants(url: string) {
   return [url];
 }
 
+async function getNextSiteSortOrder(increment = 10) {
+  const aggregate = await prisma.site.aggregate({
+    _max: {
+      sortOrder: true,
+    },
+  });
+
+  return (aggregate._max.sortOrder ?? 0) + increment;
+}
+
 async function mapWithConcurrency<T, R>(
   items: T[],
   limit: number,
@@ -287,6 +297,7 @@ async function createSite(formData: FormData) {
     isPublished,
     page,
   } = parsed.data;
+  const hasManualSortOrder = String(formData.get("sortOrder") ?? "").trim() !== "";
 
   let createdSite;
   const siteSlug = slug || await createUniqueSiteSlug(buildDefaultSiteSlug(url));
@@ -305,6 +316,9 @@ async function createSite(formData: FormData) {
 
   try {
     const resolvedIconUrl = iconUrl || await discoverSiteIconUrl(url);
+    const resolvedSortOrder = hasManualSortOrder
+      ? sortOrder
+      : await getNextSiteSortOrder();
 
     createdSite = await prisma.site.create({
       data: {
@@ -316,7 +330,7 @@ async function createSite(formData: FormData) {
         description: description || null,
         featureImage: featureImage || null,
         isFeatured,
-        sortOrder,
+        sortOrder: resolvedSortOrder,
         isPublished,
       },
     });
@@ -436,17 +450,28 @@ async function bulkImportSites(formData: FormData) {
     );
   }
 
-  let preparedSites: Array<{ name: string; slug: string; url: string; iconUrl: string | null }>;
+  let preparedSites: Array<{
+    name: string;
+    slug: string;
+    url: string;
+    iconUrl: string | null;
+    sortOrder: number;
+  }>;
 
   try {
     const reservedSlugs = new Set<string>();
     const sitesWithSlugs = [];
+    const firstSortOrder = await getNextSiteSortOrder();
 
-    for (const site of sitesToCreate) {
+    for (const [index, site] of sitesToCreate.entries()) {
       const slug = await createUniqueSiteSlug(buildDefaultSiteSlug(site.url), reservedSlugs);
 
       reservedSlugs.add(slug);
-      sitesWithSlugs.push({ ...site, slug });
+      sitesWithSlugs.push({
+        ...site,
+        slug,
+        sortOrder: firstSortOrder + index * 10,
+      });
     }
 
     preparedSites = await mapWithConcurrency(
@@ -479,6 +504,7 @@ async function bulkImportSites(formData: FormData) {
         slug: site.slug,
         url: site.url,
         iconUrl: site.iconUrl,
+        sortOrder: site.sortOrder,
         isPublished,
       })),
       skipDuplicates: true,
@@ -1058,7 +1084,12 @@ export default async function AdminSitesPage({
                 </label>
                 <label className="block space-y-2">
                   <span className="text-sm font-medium">排序</span>
-                  <input className="input" name="sortOrder" type="number" defaultValue="0" />
+                  <input
+                    className="input"
+                    name="sortOrder"
+                    type="number"
+                    placeholder="留空自动追加"
+                  />
                 </label>
               </div>
               <label className="block space-y-2">
