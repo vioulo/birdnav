@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { discoverSiteIconUrl } from "@/lib/site-icon";
+import { discoverSiteIconUrl } from "@/lib/site-icon-core";
 
 function isLocalIconPath(value: string | null) {
   return !!value && value.startsWith("/uploads/icons/");
