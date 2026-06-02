@@ -88,7 +88,31 @@ docker compose up -d --build
 
 - `bun run db:migrate:deploy`
 - `bun run db:seed`，仅补齐缺失的初始化数据，不覆盖已有站点配置
+- `bun run icons:migrate`，仅在 `RUN_ICON_MIGRATION=true` 时执行
 - `bun run start`
+
+应用容器会把站点图标持久化到挂载卷 `birdnav-icons`，用于保存本地缓存后的 icon 资源。
+
+如果需要把数据库里已有站点的外链 icon 批量迁移为本地图标，可以执行：
+
+```bash
+bun run icons:migrate
+```
+
+这个脚本会遍历现有站点，尝试重新抓取并保存到 `public/uploads/icons`，成功后把数据库中的 `iconUrl` 更新为站内路径。
+
+如果希望在容器启动时自动执行一次迁移，可以在 `.env` 中设置：
+
+```bash
+RUN_ICON_MIGRATION=true
+
+or
+
+RUN_ICON_MIGRATION=true docker compose up -d --no-deps --build app
+
+```
+
+这样重建 `app` 容器时会自动运行 `bun run icons:migrate`。默认值为 `false`，避免每次发布都触发全量 icon 同步。
 
 查看日志：
 
@@ -102,6 +126,7 @@ docker compose logs -f app
 DATABASE_URL='mysql://user:password@host:3306/birdnav' \
 RUN_MIGRATIONS=false \
 RUN_SEED=false \
+RUN_ICON_MIGRATION=false \
 docker compose up -d --no-deps --build app
 ```
 

@@ -12,7 +12,8 @@
     "db:migrate:deploy": "prisma migrate deploy",
     "db:migrate:status": "prisma migrate status",
     "db:push": "prisma db push",
-    "db:seed": "bun run prisma/seed.ts"
+    "db:seed": "bun run prisma/seed.ts",
+    "icons:migrate": "bun run scripts/migrate-icons.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.16.0",

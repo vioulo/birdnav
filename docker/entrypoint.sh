@@ -9,4 +9,8 @@ if [ "${RUN_SEED:-true}" = "true" ]; then
   bun run db:seed
 fi
 
+if [ "${RUN_ICON_MIGRATION:-false}" = "true" ]; then
+  bun run icons:migrate
+fi
+
 exec "$@"

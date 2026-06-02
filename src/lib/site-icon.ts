@@ -2,11 +2,24 @@ import "server-only";
 
 import { lookup } from "node:dns/promises";
 import { isIP } from "node:net";
+import { saveIconBuffer } from "@/lib/icon-storage";
 
 const ICON_FETCH_TIMEOUT_MS = 4000;
 const MAX_HTML_LENGTH = 240_000;
+const MAX_ICON_BYTES = 1024 * 1024;
 const MAX_REDIRECTS = 3;
 const ALLOWED_PORTS = new Set(["", "80", "443"]);
+const ICON_CONTENT_TYPES = new Map<string, string>([
+  ["image/png", "png"],
+  ["image/jpeg", "jpg"],
+  ["image/jpg", "jpg"],
+  ["image/webp", "webp"],
+  ["image/gif", "gif"],
+  ["image/svg+xml", "svg"],
+  ["image/x-icon", "ico"],
+  ["image/vnd.microsoft.icon", "ico"],
+  ["application/octet-stream", "ico"],
+]);
 
 function readHtmlAttr(tag: string, attr: string) {
   const match = tag.match(
@@ -154,7 +167,7 @@ async function resolvePublicHttpUrl(candidateUrl: string) {
 }
 
 function toAbsoluteHttpUrl(baseUrl: string, href: string) {
-  if (!href || /^data:/i.test(href)) {
+  if (!href) {
     return null;
   }
 
@@ -170,6 +183,252 @@ function toAbsoluteHttpUrl(baseUrl: string, href: string) {
   } catch {
     return null;
   }
+}
+
+function extractDataIcon(href: string) {
+  const match = href.match(/^data:([^;,]+)?(;base64)?,(.*)$/i);
+
+  if (!match) {
+    return null;
+  }
+
+  const mimeType = (match[1] || "text/plain").toLowerCase();
+  const isBase64 = !!match[2];
+  const payload = match[3] || "";
+  const extension = ICON_CONTENT_TYPES.get(mimeType);
+
+  if (!extension) {
+    return null;
+  }
+
+  try {
+    const buffer = isBase64
+      ? Buffer.from(payload, "base64")
+      : Buffer.from(decodeURIComponent(payload), "utf8");
+
+    if (!buffer.length || buffer.length > MAX_ICON_BYTES) {
+      return null;
+    }
+
+    return {
+      mimeType,
+      extension,
+      buffer,
+    };
+  } catch {
+    return null;
+  }
+}
+
+function extractManifestIconCandidates(html: string, baseUrl: string) {
+  const candidates: Array<{ href: string; score: number }> = [];
+
+  for (const match of html.matchAll(/<link\b[^>]*>/gi)) {
+    const tag = match[0];
+    const rel = readHtmlAttr(tag, "rel");
+
+    if (rel.toLowerCase().trim() !== "manifest") {
+      continue;
+    }
+
+    const href = toAbsoluteHttpUrl(baseUrl, readHtmlAttr(tag, "href"));
+
+    if (!href) {
+      continue;
+    }
+
+    candidates.push({
+      href,
+      score: 18,
+    });
+  }
+
+  return candidates;
+}
+
+async function fetchJson(url: string) {
+  const resolvedUrl = await resolvePublicHttpUrl(url);
+
+  if (!resolvedUrl) {
+    return null;
+  }
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), ICON_FETCH_TIMEOUT_MS);
+
+  try {
+    const response = await fetch(resolvedUrl, {
+      cache: "no-store",
+      headers: {
+        accept: "application/manifest+json,application/json",
+        "user-agent": "BirdNav icon resolver",
+      },
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    return await response.json();
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+async function extractManifestIcons(manifestUrl: string) {
+  const manifest = await fetchJson(manifestUrl);
+
+  if (!manifest || typeof manifest !== "object" || !("icons" in manifest)) {
+    return [];
+  }
+
+  const icons = Array.isArray(manifest.icons) ? manifest.icons : [];
+
+  return icons
+    .map((icon) => {
+      if (!icon || typeof icon !== "object") {
+        return null;
+      }
+
+      const src = typeof icon.src === "string" ? icon.src : "";
+      const sizes = typeof icon.sizes === "string" ? icon.sizes : "";
+      const purpose = typeof icon.purpose === "string" ? icon.purpose : "";
+      const href = toAbsoluteHttpUrl(manifestUrl, src);
+
+      if (!href) {
+        return null;
+      }
+
+      let score = 12;
+
+      if (sizes.includes("512x512")) {
+        score += 18;
+      } else if (sizes.includes("192x192")) {
+        score += 14;
+      } else if (sizes.includes("180x180")) {
+        score += 12;
+      }
+
+      if (purpose.includes("maskable")) {
+        score += 4;
+      }
+
+      return {
+        href,
+        score,
+      };
+    })
+    .filter((item): item is { href: string; score: number } => !!item);
+}
+
+function detectExtension(contentType: string, sourceUrl: string) {
+  const normalizedType = contentType.split(";")[0].trim().toLowerCase();
+  const mapped = ICON_CONTENT_TYPES.get(normalizedType);
+
+  if (mapped) {
+    return mapped;
+  }
+
+  try {
+    const pathname = new URL(sourceUrl).pathname;
+    const ext = pathname.split(".").pop()?.toLowerCase();
+
+    if (ext && ext.length <= 5) {
+      return ext;
+    }
+  } catch {
+    // Ignore parse failures and fall back to ico.
+  }
+
+  return "ico";
+}
+
+async function readLimitedBinary(response: Response) {
+  const contentLength = Number(response.headers.get("content-length") || "0");
+
+  if (contentLength && contentLength > MAX_ICON_BYTES) {
+    return null;
+  }
+
+  const buffer = new Uint8Array(await response.arrayBuffer());
+
+  if (!buffer.length || buffer.byteLength > MAX_ICON_BYTES) {
+    return null;
+  }
+
+  return buffer;
+}
+
+async function downloadRemoteIcon(sourceUrl: string) {
+  const resolvedUrl = await resolvePublicHttpUrl(sourceUrl);
+
+  if (!resolvedUrl) {
+    return null;
+  }
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), ICON_FETCH_TIMEOUT_MS);
+
+  try {
+    const response = await fetch(resolvedUrl, {
+      cache: "no-store",
+      redirect: "follow",
+      headers: {
+        accept: "image/*,*/*;q=0.8",
+        "user-agent": "BirdNav icon resolver",
+      },
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const contentType = response.headers.get("content-type") || "";
+    const buffer = await readLimitedBinary(response);
+
+    if (!buffer) {
+      return null;
+    }
+
+    return {
+      sourceUrl: resolvedUrl.toString(),
+      buffer,
+      extension: detectExtension(contentType, resolvedUrl.toString()),
+    };
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+async function persistIconCandidate(siteUrl: string, href: string) {
+  const dataIcon = extractDataIcon(href);
+
+  if (dataIcon) {
+    return saveIconBuffer({
+      siteUrl,
+      buffer: dataIcon.buffer,
+      extension: dataIcon.extension,
+    });
+  }
+
+  const downloaded = await downloadRemoteIcon(href);
+
+  if (!downloaded) {
+    return null;
+  }
+
+  return saveIconBuffer({
+    siteUrl,
+    sourceUrl: downloaded.sourceUrl,
+    buffer: downloaded.buffer,
+    extension: downloaded.extension,
+  });
 }
 
 async function readLimitedHtml(response: Response) {
@@ -286,7 +545,10 @@ export async function discoverSiteIconUrl(siteUrl: string) {
       continue;
     }
 
-    const href = toAbsoluteHttpUrl(resolvedUrl.toString(), readHtmlAttr(tag, "href"));
+    const rawHref = readHtmlAttr(tag, "href");
+    const href = /^data:/i.test(rawHref)
+      ? rawHref
+      : toAbsoluteHttpUrl(resolvedUrl.toString(), rawHref);
 
     if (!href) {
       continue;
@@ -298,11 +560,33 @@ export async function discoverSiteIconUrl(siteUrl: string) {
     });
   }
 
-  candidates.sort((a, b) => b.score - a.score);
-
-  if (candidates[0]) {
-    return candidates[0].href;
+  const manifestCandidates = extractManifestIconCandidates(html, resolvedUrl.toString());
+  for (const manifest of manifestCandidates) {
+    candidates.push(...(await extractManifestIcons(manifest.href)));
   }
 
-  return new URL("/favicon.ico", resolvedUrl.origin).toString();
+  candidates.push({
+    href: new URL("/favicon.ico", resolvedUrl.origin).toString(),
+    score: 6,
+  });
+
+  candidates.sort((a, b) => b.score - a.score);
+
+  const seen = new Set<string>();
+
+  for (const candidate of candidates) {
+    if (seen.has(candidate.href)) {
+      continue;
+    }
+
+    seen.add(candidate.href);
+
+    const storedPath = await persistIconCandidate(resolvedUrl.toString(), candidate.href);
+
+    if (storedPath) {
+      return storedPath;
+    }
+  }
+
+  return null;
 }

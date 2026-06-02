@@ -30,10 +30,14 @@ services:
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
       RUN_MIGRATIONS: ${RUN_MIGRATIONS:-true}
       RUN_SEED: ${RUN_SEED:-true}
+      RUN_ICON_MIGRATION: ${RUN_ICON_MIGRATION:-false}
       PORT: 3000
       HOSTNAME: 0.0.0.0
     ports:
       - "${APP_PORT:-3000}:3000"
+    volumes:
+      - birdnav-icons:/app/public/uploads/icons
 
 volumes:
   birdnav-mysql:
+  birdnav-icons:
