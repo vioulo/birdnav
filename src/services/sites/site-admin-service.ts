@@ -114,7 +114,7 @@ export async function createAdminSite(params: {
   adminId: number;
   catId: number;
   name: string;
-  slug: string;
+  slug?: string;
   url: string;
   iconUrl?: string;
   description?: string;
@@ -173,7 +173,7 @@ export async function updateAdminSite(params: {
   siteId: number;
   catId: number;
   name: string;
-  slug: string;
+  slug?: string;
   url: string;
   iconUrl?: string;
   description?: string;
