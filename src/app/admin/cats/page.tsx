@@ -1,292 +1,24 @@
 import Link from "next/link";
-import type { Prisma } from "@prisma/client";
-import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 
+import {
+  createCategoryAction,
+  deleteCategoryAction,
+  updateCategoryAction,
+} from "@/app/admin/cats/actions";
+import {
+  PAGE_SIZE,
+  buildCategoryWhere,
+  buildCatsHref,
+  buildCatsModalHref,
+  type CategoryRow,
+} from "@/app/admin/cats/schema";
 import { AdminFeedback } from "@/components/admin-feedback";
 import { AdminPageHeader } from "@/components/admin-page-header";
 import { AdminShell } from "@/components/admin-shell";
 import { ConfirmSubmitButton } from "@/components/confirm-submit-button";
 import { ModalEscClose } from "@/components/modal-esc-close";
 import { requireAdmin } from "@/lib/auth";
-import { recordAuditLog } from "@/lib/audit";
-import { getActionErrorMessage } from "@/lib/db-errors";
 import { prisma } from "@/lib/prisma";
-import { slugify } from "@/lib/utils";
-import { parseCategoryForm } from "@/lib/validation";
-
-const PAGE_SIZE = 20;
-
-type CategoryRow = {
-  id: number;
-  name: string;
-  slug: string;
-  color: string;
-  sortOrder: number;
-  _count: {
-    sites: number;
-  };
-};
-
-function buildCatsHref(page: number, keyword = "") {
-  const searchParams = new URLSearchParams();
-
-  if (page > 1) {
-    searchParams.set("page", String(page));
-  }
-
-  if (keyword) {
-    searchParams.set("q", keyword);
-  }
-
-  const query = searchParams.toString();
-  return query ? `/admin/cats?${query}` : "/admin/cats";
-}
-
-function buildCatsModalHref(page: number, keyword = "") {
-  const searchParams = new URLSearchParams();
-
-  if (page > 1) {
-    searchParams.set("page", String(page));
-  }
-
-  if (keyword) {
-    searchParams.set("q", keyword);
-  }
-
-  searchParams.set("modal", "new");
-  return `/admin/cats?${searchParams.toString()}`;
-}
-
-function buildCatsFeedbackHref(
-  page: number,
-  type: "success" | "error",
-  message: string,
-  modal?: "new",
-  keyword = "",
-) {
-  const searchParams = new URLSearchParams();
-
-  if (page > 1) {
-    searchParams.set("page", String(page));
-  }
-
-  if (keyword) {
-    searchParams.set("q", keyword);
-  }
-
-  if (modal) {
-    searchParams.set("modal", modal);
-  }
-
-  searchParams.set(type, message);
-  const query = searchParams.toString();
-
-  return query ? `/admin/cats?${query}` : "/admin/cats";
-}
-
-async function createCategory(formData: FormData) {
-  "use server";
-
-  const admin = await requireAdmin();
-  const keyword = String(formData.get("q") || "").trim();
-
-  const parsed = parseCategoryForm(formData);
-
-  if (!parsed.success) {
-    redirect(
-      buildCatsFeedbackHref(
-        1,
-        "error",
-        parsed.error.issues[0]?.message || "分类信息无效。",
-        "new",
-        keyword,
-      ),
-    );
-  }
-
-  const { name, slug: slugInput, color, sortOrder, page } = parsed.data;
-  const slug = slugify(slugInput || name);
-
-  let createdCategory;
-
-  try {
-    createdCategory = await prisma.category.create({
-      data: {
-        name,
-        slug,
-        color,
-        sortOrder,
-      },
-    });
-  } catch (error) {
-    redirect(
-      buildCatsFeedbackHref(
-        page,
-        "error",
-        getActionErrorMessage(error, "创建分类失败。"),
-        "new",
-        keyword,
-      ),
-    );
-  }
-
-  revalidatePath("/admin");
-  revalidatePath("/admin/cats");
-  revalidatePath("/admin/sites");
-  revalidatePath("/");
-
-  await recordAuditLog({
-    userId: admin.id,
-    action: "category.create",
-    targetType: "category",
-    targetId: createdCategory.id,
-    summary: `创建分类 ${createdCategory.name}`,
-    payload: {
-      slug: createdCategory.slug,
-      color: createdCategory.color,
-      sortOrder: createdCategory.sortOrder,
-    },
-  });
-
-  redirect(buildCatsFeedbackHref(page, "success", "分类创建成功。", undefined, keyword));
-}
-
-async function updateCategory(formData: FormData) {
-  "use server";
-
-  const admin = await requireAdmin();
-
-  const id = Number(formData.get("id"));
-  const page = Math.max(1, Number(formData.get("page") || 1));
-  const keyword = String(formData.get("q") || "").trim();
-  const parsed = parseCategoryForm(formData);
-
-  if (!id || !parsed.success) {
-    redirect(
-      buildCatsFeedbackHref(
-        page,
-        "error",
-        parsed.success ? "分类不存在。" : parsed.error.issues[0]?.message || "分类信息无效。",
-        undefined,
-        keyword,
-      ),
-    );
-  }
-
-  const { name, slug: slugInput, color, sortOrder } = parsed.data;
-  const slug = slugify(slugInput || name);
-
-  let updatedCategory;
-
-  try {
-    updatedCategory = await prisma.category.update({
-      where: { id },
-      data: {
-        name,
-        slug,
-        color,
-        sortOrder,
-      },
-    });
-  } catch (error) {
-    redirect(
-      buildCatsFeedbackHref(
-        page,
-        "error",
-        getActionErrorMessage(error, "保存分类失败。"),
-        undefined,
-        keyword,
-      ),
-    );
-  }
-
-  revalidatePath("/admin");
-  revalidatePath("/admin/cats");
-  revalidatePath("/admin/sites");
-  revalidatePath("/");
-
-  await recordAuditLog({
-    userId: admin.id,
-    action: "category.update",
-    targetType: "category",
-    targetId: updatedCategory.id,
-    summary: `更新分类 ${updatedCategory.name}`,
-    payload: {
-      slug: updatedCategory.slug,
-      color: updatedCategory.color,
-      sortOrder: updatedCategory.sortOrder,
-    },
-  });
-
-  redirect(buildCatsFeedbackHref(page, "success", "分类保存成功。", undefined, keyword));
-}
-
-async function deleteCategory(formData: FormData) {
-  "use server";
-
-  const admin = await requireAdmin();
-
-  const id = Number(formData.get("id"));
-  const page = Math.max(1, Number(formData.get("page") || 1));
-  const keyword = String(formData.get("q") || "").trim();
-
-  if (!id) {
-    redirect(buildCatsFeedbackHref(page, "error", "分类不存在。", undefined, keyword));
-  }
-
-  const category = await prisma.category.findUnique({
-    where: { id },
-    include: {
-      _count: {
-        select: {
-          sites: true,
-        },
-      },
-    },
-  });
-
-  if (!category) {
-    redirect(buildCatsFeedbackHref(page, "error", "分类不存在。", undefined, keyword));
-  }
-
-  try {
-    await prisma.category.delete({
-      where: { id },
-    });
-  } catch (error) {
-    redirect(
-      buildCatsFeedbackHref(
-        page,
-        "error",
-        getActionErrorMessage(error, "删除分类失败。"),
-        undefined,
-        keyword,
-      ),
-    );
-  }
-
-  revalidatePath("/admin");
-  revalidatePath("/admin/cats");
-  revalidatePath("/admin/sites");
-  revalidatePath("/");
-
-  await recordAuditLog({
-    userId: admin.id,
-    action: "category.delete",
-    targetType: "category",
-    targetId: category.id,
-    summary: `删除分类 ${category.name}`,
-    payload: {
-      slug: category.slug,
-      siteCount: category._count.sites,
-    },
-  });
-
-  redirect(
-    buildCatsFeedbackHref(page, "success", "分类及其下属站点已删除。", undefined, keyword),
-  );
-}
 
 export default async function AdminCategoriesPage({
   searchParams,
@@ -307,15 +39,7 @@ export default async function AdminCategoriesPage({
   const errorMessage = params.error?.trim();
   const keyword = params.q?.trim() || "";
   const skip = (page - 1) * PAGE_SIZE;
-  const categoryWhere: Prisma.CategoryWhereInput = keyword
-    ? {
-        OR: [
-          { name: { contains: keyword } },
-          { slug: { contains: keyword } },
-          { color: { contains: keyword } },
-        ],
-      }
-    : {};
+  const categoryWhere = buildCategoryWhere(keyword);
 
   const [total, categories]: [number, CategoryRow[]] = await Promise.all([
     prisma.category.count({ where: categoryWhere }),
@@ -411,7 +135,7 @@ export default async function AdminCategoriesPage({
                   <span className="admin-table-cell">{category.color}</span>
                 </summary>
 
-                <form action={updateCategory} className="admin-record-editor">
+                <form action={updateCategoryAction} className="admin-record-editor">
                   <input type="hidden" name="id" value={category.id} />
                   <input type="hidden" name="page" value={page} />
                   <input type="hidden" name="q" value={keyword} />
@@ -453,7 +177,7 @@ export default async function AdminCategoriesPage({
                       </button>
                       <ConfirmSubmitButton
                         className="button-danger"
-                        formAction={deleteCategory}
+                        formAction={deleteCategoryAction}
                         confirmMessage={`确认删除分类“${category.name}”？该分类下的站点也会一起删除。`}
                       >
                         删除
@@ -511,7 +235,7 @@ export default async function AdminCategoriesPage({
                 关闭
               </Link>
             </div>
-            <form action={createCategory} className="modal-body admin-form-grid">
+            <form action={createCategoryAction} className="modal-body admin-form-grid">
               <input type="hidden" name="page" value={page} />
               <input type="hidden" name="q" value={keyword} />
               <label className="block space-y-2">
