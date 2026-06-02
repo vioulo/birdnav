@@ -7,45 +7,45 @@
   --font-plex-mono:
     "IBM Plex Mono", "SFMono-Regular", "JetBrains Mono", "Cascadia Code", Consolas,
     "Liberation Mono", monospace;
-  --color-bg: #f0f0f0;
-  --color-bg-alt: #dcdcdc;
+  --color-bg: #f9f7f4;
+  --color-bg-alt: #f0ede8;
   --color-panel: #ffffff;
   --color-panel-strong: #ffffff;
-  --color-panel-soft: #f7f7f7;
-  --color-ink: #111111;
-  --color-line: #1976d2;
-  --color-line-strong: #111111;
-  --color-muted: #666666;
-  --color-accent: #1976d2;
-  --color-accent-strong: #0d47a1;
+  --color-panel-soft: #fdfbf8;
+  --color-ink: #3d3d3d;
+  --color-line: #c0a88a;
+  --color-line-strong: #8b8b8b;
+  --color-muted: #999999;
+  --color-accent: #a68f7d;
+  --color-accent-strong: #8b7355;
   --color-danger: #c62828;
-  --color-focus-outline: #5aa8f0;
-  --color-button-text: #111111;
-  --color-button-primary-bg: #f7f7f7;
-  --color-button-primary-hover-bg: #d9ecfb;
-  --pattern-dot: rgba(0, 0, 0, 0.12);
+  --color-focus-outline: #c0a88a;
+  --color-button-text: #3d3d3d;
+  --color-button-primary-bg: #fdfbf8;
+  --color-button-primary-hover-bg: #ede9e2;
+  --pattern-dot: rgba(139, 115, 85, 0.06);
   --ui-radius: 0px;
 }
 
 html[data-theme="light"] {
-  --color-bg: #f0f0f0;
-  --color-bg-alt: #dcdcdc;
+  --color-bg: #f9f7f4;
+  --color-bg-alt: #f0ede8;
   --color-panel: #ffffff;
   --color-panel-strong: #ffffff;
-  --color-panel-soft: #f7f7f7;
-  --color-ink: #111111;
+  --color-panel-soft: #fdfbf8;
+  --color-ink: #3d3d3d;
   --color-light: #0034ff;
-  --color-line: #1976d2;
-  --color-line-strong: #111111;
-  --color-muted: #666666;
-  --color-accent: #1976d2;
-  --color-accent-strong: #0d47a1;
+  --color-line: #c0a88a;
+  --color-line-strong: #8b8b8b;
+  --color-muted: #999999;
+  --color-accent: #a68f7d;
+  --color-accent-strong: #8b7355;
   --color-danger: #c62828;
-  --color-focus-outline: #5aa8f0;
-  --color-button-text: #111111;
-  --color-button-primary-bg: #f7f7f7;
-  --color-button-primary-hover-bg: #d9ecfb;
-  --pattern-dot: rgba(0, 0, 0, 0.12);
+  --color-focus-outline: #c0a88a;
+  --color-button-text: #3d3d3d;
+  --color-button-primary-bg: #fdfbf8;
+  --color-button-primary-hover-bg: #ede9e2;
+  --pattern-dot: rgba(139, 115, 85, 0.06);
 }
 
 html[data-theme="dark"] {
@@ -86,11 +86,8 @@ html {
 }
 
 body {
-  background:
-    radial-gradient(circle, var(--pattern-dot) 1px, transparent 1px),
-    linear-gradient(180deg, var(--color-bg) 0%, var(--color-bg-alt) 100%);
+  background: linear-gradient(180deg, var(--color-bg) 0%, var(--color-bg-alt) 100%);
   background-attachment: fixed;
-  background-size: 20px 20px, 100% 100%;
   color: var(--color-ink);
   font-family: var(--font-plex-sans), sans-serif;
 }
