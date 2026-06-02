@@ -372,6 +372,12 @@ async function fetchJson(url: string) {
 }
 
 async function extractManifestIcons(manifestUrl: string) {
+  type ManifestIcon = {
+    src?: unknown;
+    sizes?: unknown;
+    purpose?: unknown;
+  };
+
   const manifest = await fetchJson(manifestUrl);
 
   if (!manifest || typeof manifest !== "object" || !("icons" in manifest)) {
@@ -380,8 +386,8 @@ async function extractManifestIcons(manifestUrl: string) {
 
   const icons = Array.isArray(manifest.icons) ? manifest.icons : [];
 
-  return icons
-    .map((icon) => {
+  return (icons as ManifestIcon[])
+    .map((icon: ManifestIcon) => {
       if (!icon || typeof icon !== "object") {
         return null;
       }
