@@ -1,92 +1,10 @@
-import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
-
+import { updateOptionsAction } from "@/app/admin/options/actions";
+import { buildCurrentOptions } from "@/app/admin/options/schema";
 import { AdminFeedback } from "@/components/admin-feedback";
 import { AdminPageHeader } from "@/components/admin-page-header";
 import { AdminShell } from "@/components/admin-shell";
 import { requireAdmin } from "@/lib/auth";
-import { recordAuditLog } from "@/lib/audit";
-import { defaultOptions, getOptionsMap, parseFooterLinks, upsertOption } from "@/lib/options";
-import { parseOptionsForm } from "@/lib/validation";
-
-function buildOptionsFeedbackHref(type: "success" | "error", message: string) {
-  const searchParams = new URLSearchParams();
-  searchParams.set(type, message);
-  return `/admin/options?${searchParams.toString()}`;
-}
-
-async function updateOptions(formData: FormData) {
-  "use server";
-
-  const admin = await requireAdmin();
-
-  const parsed = parseOptionsForm(formData);
-
-  if (!parsed.success) {
-    redirect(
-      buildOptionsFeedbackHref(
-        "error",
-        parsed.error.issues[0]?.message || "配置内容无效。",
-      ),
-    );
-  }
-
-  const {
-    siteTitle,
-    siteSubtitle,
-    siteDescription,
-    siteKeywords,
-    siteUrl,
-    siteOgImage,
-    uiRadius,
-    clickBehavior,
-    homePageSize,
-    homeFeaturedLimit,
-    footerCopyright,
-    footerLinks,
-  } = parsed.data;
-
-  await Promise.all([
-    upsertOption("site.title", siteTitle || defaultOptions["site.title"]),
-    upsertOption("site.subtitle", siteSubtitle || defaultOptions["site.subtitle"]),
-    upsertOption("site.description", siteDescription || defaultOptions["site.description"]),
-    upsertOption("site.keywords", siteKeywords),
-    upsertOption("site.url", siteUrl || ""),
-    upsertOption("site.og_image", siteOgImage || ""),
-    upsertOption("ui.radius", String(uiRadius)),
-    upsertOption("site.click_behavior", clickBehavior),
-    upsertOption("home.page_size", String(homePageSize)),
-    upsertOption("home.featured_limit", String(homeFeaturedLimit)),
-    upsertOption("footer.copyright", footerCopyright || defaultOptions["footer.copyright"]),
-    upsertOption("footer.links", footerLinks || defaultOptions["footer.links"]),
-  ]);
-
-  revalidatePath("/");
-  revalidatePath("/admin/options");
-
-  await recordAuditLog({
-    userId: admin.id,
-    action: "options.update",
-    targetType: "option",
-    summary: "更新基础配置",
-    payload: {
-      siteTitle,
-      siteSubtitle,
-      siteDescription,
-      siteKeywords,
-      siteUrl,
-      hasOgImage: !!siteOgImage,
-      uiRadius,
-      clickBehavior,
-      homePageSize,
-      homeFeaturedLimit,
-      footerCopyright,
-      footerLinksLineCount: footerLinks.split("\n").filter(Boolean).length,
-    },
-  });
-
-  redirect(buildOptionsFeedbackHref("success", "配置保存成功。"));
-}
+import { getOptionsMap, parseFooterLinks } from "@/lib/options";
 
 export default async function AdminOptionsPage({
   searchParams,
@@ -98,32 +16,7 @@ export default async function AdminOptionsPage({
   const storedOptions = await getOptionsMap();
   const successMessage = params.success?.trim();
   const errorMessage = params.error?.trim();
-  const currentOptions = {
-    "site.title":
-      storedOptions["site.title"] || defaultOptions["site.title"],
-    "site.subtitle":
-      storedOptions["site.subtitle"] || defaultOptions["site.subtitle"],
-    "site.description":
-      storedOptions["site.description"] || defaultOptions["site.description"],
-    "site.keywords":
-      storedOptions["site.keywords"] || defaultOptions["site.keywords"],
-    "site.url":
-      storedOptions["site.url"] || defaultOptions["site.url"],
-    "site.og_image":
-      storedOptions["site.og_image"] || defaultOptions["site.og_image"],
-    "ui.radius":
-      storedOptions["ui.radius"] || defaultOptions["ui.radius"],
-    "site.click_behavior":
-      storedOptions["site.click_behavior"] || defaultOptions["site.click_behavior"],
-    "home.page_size":
-      storedOptions["home.page_size"] || defaultOptions["home.page_size"],
-    "home.featured_limit":
-      storedOptions["home.featured_limit"] || defaultOptions["home.featured_limit"],
-    "footer.copyright":
-      storedOptions["footer.copyright"] || defaultOptions["footer.copyright"],
-    "footer.links":
-      storedOptions["footer.links"] || defaultOptions["footer.links"],
-  };
+  const currentOptions = buildCurrentOptions(storedOptions);
   const footerLinks = parseFooterLinks(currentOptions["footer.links"]);
 
   return (
@@ -147,7 +40,7 @@ export default async function AdminOptionsPage({
 
       <AdminFeedback success={successMessage} error={errorMessage} />
 
-      <form action={updateOptions} className="admin-settings-shell">
+      <form action={updateOptionsAction} className="admin-settings-shell">
         <section className="admin-settings-panel">
           <div className="admin-board-head">
             <div>
