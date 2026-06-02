@@ -33,10 +33,6 @@ type V1ExperienceProps = {
   siteSubtitle: string;
 };
 
-function iconOf(name: string) {
-  return name.trim().slice(0, 1).toUpperCase();
-}
-
 export function V1Experience({
   categories,
   footerLinks,

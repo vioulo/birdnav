@@ -30,6 +30,9 @@ export function SiteIcon({
       className={imgClassName}
       src={src}
       alt={alt ?? label}
+      loading="lazy"
+      decoding="async"
+      draggable="false"
       onError={() => setHasError(true)}
     />
   );
