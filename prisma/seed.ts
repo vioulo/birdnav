@@ -41,10 +41,41 @@ function slugifySite(input: string) {
 function buildDefaultSiteSlug(url: string) {
   try {
     const parsedUrl = new URL(url);
-    return slugifySite(parsedUrl.hostname.replace(/^www\./i, ""));
+    return slugifySite(parsedUrl.hostname.replace(/^www\./i, "")) || "site";
   } catch {
     return slugifySite(url) || "site";
   }
+}
+
+async function createUniqueSiteSlug(baseSlug: string, ignoredSiteId?: number) {
+  const normalizedBase = slugifySite(baseSlug) || "site";
+  const existingSites = await prisma.site.findMany({
+    where: {
+      OR: [
+        { slug: normalizedBase },
+        { slug: { startsWith: `${normalizedBase}-` } },
+      ],
+      ...(ignoredSiteId ? { NOT: { id: ignoredSiteId } } : {}),
+    },
+    select: {
+      slug: true,
+    },
+  });
+  const usedSlugs = new Set(existingSites.map((site) => site.slug));
+
+  if (!usedSlugs.has(normalizedBase)) {
+    return normalizedBase;
+  }
+
+  for (let suffix = 2; suffix < 10000; suffix += 1) {
+    const candidate = `${normalizedBase}-${suffix}`;
+
+    if (!usedSlugs.has(candidate)) {
+      return candidate;
+    }
+  }
+
+  return `${normalizedBase}-${Date.now()}`;
 }
 
 async function main() {
@@ -114,7 +145,7 @@ async function main() {
     await prisma.site.update({
       where: { id: site.id },
       data: {
-        slug: `${buildDefaultSiteSlug(site.url)}-${site.id}`,
+        slug: await createUniqueSiteSlug(buildDefaultSiteSlug(site.url), site.id),
       },
     });
   }

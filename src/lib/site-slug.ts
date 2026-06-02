@@ -1,12 +1,12 @@
 import { prisma } from "@/lib/prisma";
-import { inferSiteSlugFromUrl } from "@/lib/utils";
+import { inferSiteSlugFromUrl, slugifySite } from "@/lib/utils";
 
 export function buildDefaultSiteSlug(url: string) {
   return inferSiteSlugFromUrl(url) || "site";
 }
 
 export async function createUniqueSiteSlug(baseSlug: string, reservedSlugs = new Set<string>()) {
-  const normalizedBase = baseSlug.trim() || "site";
+  const normalizedBase = slugifySite(baseSlug) || "site";
   const existingSites = await prisma.site.findMany({
     where: {
       OR: [
@@ -39,8 +39,9 @@ export async function createUniqueSiteSlug(baseSlug: string, reservedSlugs = new
 }
 
 export async function isSiteSlugAvailable(slug: string, ignoredSiteId?: number) {
+  const normalizedSlug = slugifySite(slug) || "site";
   const existingSite = await prisma.site.findUnique({
-    where: { slug },
+    where: { slug: normalizedSlug },
     select: { id: true },
   });
 
