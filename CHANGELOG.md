@@ -1,5 +1,20 @@
 # Changelog
 
+## v0.4.0 - 2026-06-02
+
+### Added
+- 新增站点 icon 本地缓存能力，自动将抓取到的图标保存到 `public/uploads/icons`，前台优先读取站内路径。
+- Docker 新增 `birdnav-icons` 持久化卷，用于保存本地图标资源。
+- 新增 `bun run icons:migrate` 脚本，可将已有站点的外链 icon 批量迁移为本地图标。
+- 新增 `RUN_ICON_MIGRATION` 启动开关，可在容器启动时按需自动执行 icon 迁移。
+
+### Changed
+- 后台 `sites`、`cats`、`options` 页面拆分为 `page + actions + schema + service` 结构，降低页面文件中的业务耦合。
+- 站点 icon 抓取流程增强，支持 `apple-touch-icon`、`manifest icons`、`data/base64` icon，并移除 `og:image` 作为图标兜底来源。
+
+### Fixed
+- 改善部分站点无法获取真实 icon 的情况，增加多级抓取与本地保存兜底。
+
 ## v0.3.0 - 2026-06-02
 
 ### Added
