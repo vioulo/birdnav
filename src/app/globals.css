@@ -715,24 +715,6 @@ html[data-theme="dark"] .promo-hero:hover {
 
 .featured-pill:hover {
   border-color: var(--color-line-strong);
-  background:
-    linear-gradient(
-      135deg,
-      color-mix(in srgb, var(--color-accent) 28%, transparent) 0%,
-      transparent 34%,
-      color-mix(in srgb, var(--color-accent-strong) 16%, transparent) 100%
-    ),
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--color-panel) 80%, var(--color-accent) 20%) 0%,
-      color-mix(in srgb, var(--color-panel) 94%, var(--color-bg-alt) 6%) 100%
-    );
-  box-shadow:
-    6px 6px 0 color-mix(in srgb, var(--color-line-strong) 88%, transparent),
-    -2px -2px 0 color-mix(in srgb, var(--color-accent) 34%, transparent),
-    0 0 0 1px color-mix(in srgb, var(--color-accent) 24%, transparent),
-    0 14px 28px -18px color-mix(in srgb, var(--color-accent) 62%, transparent);
-  transform: translate(-2px, -2px);
 }
 
 .featured-pill:hover::before {
