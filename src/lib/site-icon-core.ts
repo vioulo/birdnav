@@ -1,6 +1,5 @@
 import { lookup } from "node:dns/promises";
 import { isIP } from "node:net";
-import { saveIconBuffer } from "@/lib/icon-storage-core";
 
 const ICON_FETCH_TIMEOUT_MS = 4000;
 const MAX_HTML_LENGTH = 240_000;
@@ -461,7 +460,7 @@ async function readLimitedBinary(response: Response) {
   return buffer;
 }
 
-async function downloadRemoteIcon(sourceUrl: string) {
+async function validateRemoteIcon(sourceUrl: string) {
   const resolvedUrl = await resolvePublicHttpUrl(sourceUrl);
 
   if (!resolvedUrl) {
@@ -486,18 +485,22 @@ async function downloadRemoteIcon(sourceUrl: string) {
       return null;
     }
 
-    const contentType = response.headers.get("content-type") || "";
+    const contentType = (response.headers.get("content-type") || "").toLowerCase();
+
+    if (
+      !contentType.startsWith("image/") &&
+      !ICON_CONTENT_TYPES.has(contentType.split(";")[0].trim())
+    ) {
+      return null;
+    }
+
     const buffer = await readLimitedBinary(response);
 
     if (!buffer) {
       return null;
     }
 
-    return {
-      sourceUrl: resolvedUrl.toString(),
-      buffer,
-      extension: detectExtension(contentType, resolvedUrl.toString()),
-    };
+    return resolvedUrl.toString();
   } catch {
     return null;
   } finally {
@@ -509,25 +512,10 @@ async function persistIconCandidate(siteUrl: string, href: string) {
   const dataIcon = extractDataIcon(href);
 
   if (dataIcon) {
-    return saveIconBuffer({
-      siteUrl,
-      buffer: dataIcon.buffer,
-      extension: dataIcon.extension,
-    });
+    return href;
   }
 
-  const downloaded = await downloadRemoteIcon(href);
-
-  if (!downloaded) {
-    return null;
-  }
-
-  return saveIconBuffer({
-    siteUrl,
-    sourceUrl: downloaded.sourceUrl,
-    buffer: downloaded.buffer,
-    extension: downloaded.extension,
-  });
+  return await validateRemoteIcon(href);
 }
 
 export async function discoverSiteIconUrl(siteUrl: string) {

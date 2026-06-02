@@ -23,8 +23,6 @@
 # misc
 .DS_Store
 *.pem
-public/uploads/icons/*
-!public/uploads/icons/.gitkeep
 
 # debug
 npm-debug.log*

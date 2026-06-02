@@ -21,29 +21,29 @@ async function main() {
   let failedCount = 0;
 
   for (const site of sites) {
-    if (isLocalIconPath(site.iconUrl)) {
+    if (site.iconUrl && !isLocalIconPath(site.iconUrl)) {
       skippedCount += 1;
       continue;
     }
 
     try {
-      const localIconUrl = await discoverSiteIconUrl(site.url);
+      const resolvedIconUrl = await discoverSiteIconUrl(site.url);
 
-      if (!localIconUrl) {
+      if (!resolvedIconUrl) {
         failedCount += 1;
-        console.info(`[skip] ${site.id} ${site.name} -> no local icon resolved`);
+        console.info(`[skip] ${site.id} ${site.name} -> no icon resolved`);
         continue;
       }
 
       await prisma.site.update({
         where: { id: site.id },
         data: {
-          iconUrl: localIconUrl,
+          iconUrl: resolvedIconUrl,
         },
       });
 
       migratedCount += 1;
-      console.info(`[ok] ${site.id} ${site.name} -> ${localIconUrl}`);
+      console.info(`[ok] ${site.id} ${site.name} -> ${resolvedIconUrl}`);
     } catch (error) {
       failedCount += 1;
       console.error(`[fail] ${site.id} ${site.name}`, error);

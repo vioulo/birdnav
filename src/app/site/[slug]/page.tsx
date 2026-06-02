@@ -5,6 +5,7 @@ import { notFound, redirect } from "next/navigation";
 
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
+import { SiteIcon } from "@/components/site-icon";
 import { getOptionValue, parseFooterLinks } from "@/lib/options";
 import { prisma } from "@/lib/prisma";
 import { getThemeMode } from "@/lib/theme";
@@ -60,12 +61,13 @@ export default async function SiteDetailPage({
           <section className="detail-card">
             <div className="detail-summary-row">
               <span className="detail-icon" aria-hidden="true">
-                {site.iconUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={site.iconUrl} alt="" />
-                ) : (
-                  <span>{site.name.trim().slice(0, 1).toUpperCase()}</span>
-                )}
+                <SiteIcon
+                  src={site.iconUrl}
+                  label={site.name}
+                  alt={site.name}
+                  imgClassName=""
+                  fallbackClassName=""
+                />
               </span>
               <div className="detail-title-block">
                 <h1>{site.name}</h1>

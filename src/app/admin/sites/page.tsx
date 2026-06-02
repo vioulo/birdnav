@@ -23,6 +23,7 @@ import { AdminPageHeader } from "@/components/admin-page-header";
 import { AdminShell } from "@/components/admin-shell";
 import { ConfirmSubmitButton } from "@/components/confirm-submit-button";
 import { ModalEscClose } from "@/components/modal-esc-close";
+import { SiteIcon } from "@/components/site-icon";
 import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
@@ -182,12 +183,13 @@ export default async function AdminSitesPage({
               <details key={site.id} className="admin-record">
                 <summary className="admin-record-summary is-site-row">
                   <span className="admin-site-icon" aria-hidden="true">
-                    {site.iconUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={site.iconUrl} alt="" />
-                    ) : (
-                      <span>{site.name.trim().slice(0, 1).toUpperCase()}</span>
-                    )}
+                    <SiteIcon
+                      src={site.iconUrl}
+                      label={site.name}
+                      alt={site.name}
+                      imgClassName=""
+                      fallbackClassName=""
+                    />
                   </span>
                   <span className="admin-record-main">
                     <strong>{site.name}</strong>

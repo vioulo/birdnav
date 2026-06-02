@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { ExternalLink, MoveLeft } from "lucide-react";
 
+import { SiteIcon } from "@/components/site-icon";
 import { V1Shell } from "@/components/v1-shell";
 import { getOptionValue, parseFooterLinks } from "@/lib/options";
 import { prisma } from "@/lib/prisma";
@@ -56,12 +57,13 @@ export default async function V1SiteDetailPage({
         <section className="v1-detail-card">
           <div className="v1-detail-summary">
             <span className="v1-detail-icon" aria-hidden="true">
-              {site.iconUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={site.iconUrl} alt="" />
-              ) : (
-                site.name.trim().slice(0, 1).toUpperCase()
-              )}
+              <SiteIcon
+                src={site.iconUrl}
+                label={site.name}
+                alt={site.name}
+                imgClassName=""
+                fallbackClassName=""
+              />
             </span>
             <div className="v1-detail-title">
               <p className="v1-eyebrow">{site.category.name}</p>

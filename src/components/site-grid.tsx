@@ -1,3 +1,4 @@
+import { SiteIcon } from "@/components/site-icon";
 type SiteGridProps = {
   onCategorySelect: (categorySlug: string) => void;
   items: Array<{
@@ -29,14 +30,12 @@ export function SiteGrid({ onCategorySelect, items }: SiteGridProps) {
               title={`${item.categoryName}${item.description ? ` · ${item.description}` : ""}`}
             >
               <span className="link-pill-icon" aria-hidden="true">
-                {item.iconUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img className="link-pill-icon-image" src={item.iconUrl} alt="" />
-                ) : (
-                  <span className="link-pill-icon-fallback">
-                    {item.name.trim().slice(0, 1).toUpperCase()}
-                  </span>
-                )}
+                <SiteIcon
+                  src={item.iconUrl}
+                  label={item.name}
+                  imgClassName="link-pill-icon-image"
+                  fallbackClassName="link-pill-icon-fallback"
+                />
               </span>
               <span className="link-pill-name">{item.name}</span>
               {item.external ? <span className="link-pill-arrow">↗</span> : null}

@@ -3,6 +3,7 @@
 import { useDeferredValue, useState } from "react";
 import { Search } from "lucide-react";
 
+import { SiteIcon } from "@/components/site-icon";
 import { V1Shell } from "@/components/v1-shell";
 import type { ThemeMode } from "@/lib/options";
 
@@ -116,12 +117,13 @@ export function V1Experience({
                       rel={site.external ? "noreferrer" : undefined}
                     >
                       <span className="v1-card-icon" aria-hidden="true">
-                        {site.iconUrl ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={site.iconUrl} alt="" />
-                        ) : (
-                          iconOf(site.name)
-                        )}
+                        <SiteIcon
+                          src={site.iconUrl}
+                          label={site.name}
+                          alt={site.name}
+                          imgClassName=""
+                          fallbackClassName=""
+                        />
                       </span>
                       <span className="v1-card-text">
                         <span className="v1-card-name">{site.name}</span>

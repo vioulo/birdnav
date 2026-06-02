@@ -91,15 +91,15 @@ docker compose up -d --build
 - `bun run icons:migrate`，仅在 `RUN_ICON_MIGRATION=true` 时执行
 - `bun run start`
 
-应用容器会把站点图标持久化到挂载卷 `birdnav-icons`，用于保存本地缓存后的 icon 资源。
+应用容器不再保存本地图标文件，icon 由远程链接直接引用。
 
-如果需要把数据库里已有站点的外链 icon 批量迁移为本地图标，可以执行：
+如果需要把数据库里已有站点的本地 icon 路径或缺失 icon 批量迁移为可访问的远程 icon 链接，可以执行：
 
 ```bash
 bun run icons:migrate
 ```
 
-这个脚本会遍历现有站点，尝试重新抓取并保存到 `public/uploads/icons`，成功后把数据库中的 `iconUrl` 更新为站内路径。
+这个脚本会遍历现有站点，尝试重新抓取可访问的 icon 链接，并把数据库中的 `iconUrl` 更新为该远程链接。
 
 如果希望在容器启动时自动执行一次迁移，可以在 `.env` 中设置：
 

@@ -35,9 +35,6 @@ services:
       HOSTNAME: 0.0.0.0
     ports:
       - "${APP_PORT:-3000}:3000"
-    volumes:
-      - birdnav-icons:/app/public/uploads/icons
 
 volumes:
   birdnav-mysql:
-  birdnav-icons:
