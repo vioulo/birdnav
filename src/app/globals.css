@@ -953,7 +953,6 @@ html[data-theme-canvas="running"] *::after {
   font-size: clamp(1.25rem, 3vw, 2.2rem);
   font-weight: 850;
   letter-spacing: -0.04em;
-  line-height: 1;
 }
 
 .detail-category {
@@ -1794,10 +1793,6 @@ html[data-theme="dark"] .detail-button.is-primary:hover {
   .detail-summary-row {
     grid-template-columns: 58px minmax(0, 1fr);
     min-height: 64px;
-  }
-
-  .detail-title-block h1 {
-    font-size: 1.35rem;
   }
 
   .detail-description {
