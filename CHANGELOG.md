@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.4.1 - 2026-06-02
+
+### Changed
+- 取消站点 icon 本地缓存能力，改为直接存储远程 icon 链接；不再依赖 `public/uploads/icons` 目录。
+- Docker 移除 `birdnav-icons` 持久化卷，避免部署时维护本地 icon 文件存储。
+- 前台 icon 加载失败时回退为站点名称首字母。
+- 现在 `bun run icons:migrate` 脚本，可将已有站点的本地 icon 路径或缺失 icon 批量迁移为可访问的远程 icon 链接。
+- 更新前台 feature 块的 hover 样式
+
+### Fixed
+- 改善部分站点无法获取真实 icon 的情况，增加多级抓取与本地保存兜底。
+
 ## v0.4.0 - 2026-06-02
 
 ### Added
