@@ -11,6 +11,7 @@
 ### Changed
 - 后台 `sites`、`cats`、`options` 页面拆分为 `page + actions + schema + service` 结构，降低页面文件中的业务耦合。
 - 站点 icon 抓取流程增强，支持 `apple-touch-icon`、`manifest icons`、`data/base64` icon，并移除 `og:image` 作为图标兜底来源。
+- 更新首页 feature 块的间距和样式，调整 link-item 的布局
 
 ### Fixed
 - 改善部分站点无法获取真实 icon 的情况，增加多级抓取与本地保存兜底。
