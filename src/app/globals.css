@@ -718,9 +718,14 @@ html[data-theme="dark"] .promo-hero:hover {
 }
 
 .links-grid {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 180px));
   gap: 6px;
+  align-items: stretch;
+}
+
+.links-grid .empty-state {
+  grid-column: 1 / -1;
 }
 
 .load-more-row {
@@ -741,9 +746,11 @@ html[data-theme="dark"] .promo-hero:hover {
 }
 
 .link-pill-shell {
-  display: inline-flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 28px;
   align-items: stretch;
-  max-width: 100%;
+  width: 180px;
+  max-width: 180px;
   height: 28px;
   border: 1px solid var(--color-line);
   background: var(--color-panel);
@@ -754,9 +761,9 @@ html[data-theme="dark"] .promo-hero:hover {
 }
 
 .link-pill {
-  display: inline-flex;
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) auto;
   min-width: 0;
-  max-width: min(100%, 260px);
   align-items: center;
   gap: 0;
   padding: 0;
@@ -768,7 +775,7 @@ html[data-theme="dark"] .promo-hero:hover {
 }
 
 .link-pill-icon {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   justify-content: center;
   width: 28px;
@@ -798,14 +805,12 @@ html[data-theme="dark"] .promo-hero:hover {
   width: 6px;
   height: 6px;
   flex-shrink: 0;
-  border-radius: 999px;
   transition: transform 140ms ease;
 }
 
 .link-pill-name {
-  display: inline-flex;
+  display: grid;
   align-items: center;
-  align-self: stretch;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -826,8 +831,8 @@ html[data-theme="dark"] .promo-hero:hover {
 
 .link-pill-filter {
   display: inline-flex;
-  width: 18px;
-  padding: 0 6px 0 0;
+  width: 28px;
+  padding: 0;
   align-items: center;
   justify-content: center;
   cursor: pointer;
@@ -1707,6 +1712,20 @@ html[data-theme="dark"] .detail-button.is-primary:hover {
     padding: 12px 14px;
   }
 
+  .footer-content {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .footer-links {
+    order: 1;
+  }
+
+  .copyright {
+    order: 2;
+  }
+
   .header-brand {
     width: 100%;
     justify-content: flex-start;
@@ -1749,6 +1768,15 @@ html[data-theme="dark"] .detail-button.is-primary:hover {
   .featured-pill {
     min-width: min(220px, 100%);
     max-width: 100%;
+  }
+
+  .links-grid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  }
+
+  .link-pill-shell {
+    width: 100%;
+    max-width: none;
   }
 
   .detail-main {
