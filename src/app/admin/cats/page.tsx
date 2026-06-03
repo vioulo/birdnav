@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { X } from "lucide-react";
 
 import {
   createCategoryAction,
@@ -231,8 +232,12 @@ export default async function AdminCategoriesPage({
                 <p className="eyebrow">Create</p>
                 <h3 className="mt-1 text-xl font-semibold">新建分类</h3>
               </div>
-              <Link className="button-secondary" href={buildCatsHref(page, keyword)}>
-                关闭
+              <Link
+                className="button-secondary"
+                href={buildCatsHref(page, keyword)}
+                aria-label="关闭"
+              >
+                <X aria-hidden="true" />
               </Link>
             </div>
             <form action={createCategoryAction} className="modal-body admin-form-grid">

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { X } from "lucide-react";
 
 import {
   bulkImportSitesAction,
@@ -357,8 +358,12 @@ export default async function AdminSitesPage({
                 <p className="eyebrow">Create</p>
                 <h3 className="mt-1 text-xl font-semibold">新建站点</h3>
               </div>
-              <Link className="button-secondary" href={buildSitesHref(page, filters)}>
-                关闭
+              <Link
+                className="button-secondary"
+                href={buildSitesHref(page, filters)}
+                aria-label="关闭"
+              >
+                <X aria-hidden="true" />
               </Link>
             </div>
             <form action={createSiteAction} className="modal-body admin-form-grid">
@@ -455,8 +460,12 @@ export default async function AdminSitesPage({
                 <p className="eyebrow">Bulk Import</p>
                 <h3 className="mt-1 text-xl font-semibold">批量导入站点</h3>
               </div>
-              <Link className="button-secondary" href={buildSitesHref(page, filters)}>
-                关闭
+              <Link
+                className="button-secondary"
+                href={buildSitesHref(page, filters)}
+                aria-label="关闭"
+              >
+                <X aria-hidden="true" />
               </Link>
             </div>
             <form action={bulkImportSitesAction} className="modal-body admin-form-grid">

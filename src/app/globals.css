@@ -225,6 +225,7 @@ input[type="color"].input {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  line-height: 1;
   border: 1px solid var(--color-line);
   background: var(--color-button-primary-bg);
   min-height: 36px;
@@ -243,6 +244,7 @@ input[type="color"].input {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  line-height: 1;
   border: 1px solid var(--color-line);
   background: var(--color-panel);
   min-height: 36px;
@@ -271,6 +273,7 @@ input[type="color"].input {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  line-height: 1;
   border: 1px solid color-mix(in srgb, var(--color-danger) 70%, var(--color-line) 30%);
   background: color-mix(in srgb, var(--color-danger) 22%, var(--color-panel) 78%);
   min-height: 36px;
@@ -2635,9 +2638,11 @@ html[data-theme="dark"] .detail-button.is-primary:hover {
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.45);
+  background: rgba(0, 0, 0, 0.35);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  backdrop-filter: blur(14px) saturate(140%);
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: center;
   padding: 48px 16px 16px;
   overflow-y: auto;
