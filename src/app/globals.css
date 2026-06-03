@@ -2383,13 +2383,148 @@ html[data-theme="dark"] .detail-button.is-primary:hover {
   display: grid;
 }
 
+.admin-skeleton-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid var(--color-line);
+  background: color-mix(in srgb, var(--color-panel-soft) 72%, transparent);
+  padding: 12px;
+}
+
+.admin-skeleton-toolbar-title {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.admin-skeleton-toolbar-controls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.admin-skeleton-eyebrow {
+  width: 72px;
+  height: 10px;
+}
+
+.admin-skeleton-heading {
+  width: 120px;
+  height: 16px;
+}
+
+.admin-skeleton-input {
+  width: 180px;
+  height: 32px;
+  border-radius: var(--ui-radius);
+}
+
+.admin-skeleton-button {
+  width: 56px;
+  height: 32px;
+  border-radius: var(--ui-radius);
+}
+
+.admin-skeleton-columns {
+  display: grid;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--color-line);
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+
+.admin-skeleton-columns.is-site-skeleton {
+  grid-template-columns:
+    40px
+    minmax(220px, 1.4fr)
+    minmax(120px, 0.7fr)
+    minmax(74px, 0.35fr)
+    minmax(92px, 0.42fr)
+    minmax(92px, 0.42fr)
+    50px;
+}
+
+.admin-skeleton-columns.is-cat-skeleton {
+  grid-template-columns: repeat(6, 1fr);
+}
+
+.admin-skeleton-columns span:last-child {
+  text-align: right;
+}
+
 .admin-skeleton-row {
   display: grid;
-  grid-template-columns: 40px minmax(220px, 1.4fr) minmax(120px, 0.7fr) minmax(74px, 0.35fr) minmax(92px, 0.42fr) minmax(92px, 0.42fr) 50px;
   gap: 10px;
   align-items: center;
   padding: 14px 12px;
   border-top: 1px solid var(--color-line);
+}
+
+.admin-skeleton-row.is-site-skeleton {
+  grid-template-columns:
+    40px
+    minmax(220px, 1.4fr)
+    minmax(120px, 0.7fr)
+    minmax(74px, 0.35fr)
+    minmax(92px, 0.42fr)
+    minmax(92px, 0.42fr)
+    50px;
+}
+
+.admin-skeleton-row.is-cat-skeleton {
+  grid-template-columns: 28px minmax(180px, 1.4fr) repeat(3, 1fr) 50px;
+}
+
+.admin-skeleton-log-row {
+  gap: 12px;
+}
+
+.admin-skeleton-log-time {
+  height: 13px;
+  width: 85%;
+}
+
+.admin-skeleton-log-user {
+  height: 13px;
+  width: 55%;
+}
+
+.admin-skeleton-log-action {
+  height: 11px;
+  width: 60%;
+}
+
+.admin-skeleton-log-summary {
+  height: 13px;
+  width: 75%;
+}
+
+.admin-skeleton-log-target {
+  height: 11px;
+  width: 45%;
+}
+
+.admin-skeleton-field-label {
+  height: 12px;
+  width: 40%;
+}
+
+.admin-skeleton-field-input {
+  height: 36px;
+  width: 100%;
+}
+
+.admin-skeleton-meta-chip {
+  display: inline-block;
+  width: 64px;
+  height: 11px;
 }
 
 .admin-skeleton-row:first-child {
@@ -2922,6 +3057,31 @@ html[data-theme="dark"] .detail-button.is-primary:hover {
 
   .admin-data-table-columns {
     display: none;
+  }
+
+  .admin-skeleton-columns {
+    display: none;
+  }
+
+  .admin-skeleton-toolbar {
+    padding: 10px;
+  }
+
+  .admin-skeleton-input {
+    width: 120px;
+  }
+
+  .admin-skeleton-row,
+  .admin-skeleton-row.is-site-skeleton,
+  .admin-skeleton-row.is-cat-skeleton {
+    grid-template-columns: 34px minmax(0, 1fr);
+  }
+
+  .admin-skeleton-row > .admin-skeleton-badge,
+  .admin-skeleton-row > .admin-skeleton-actions {
+    grid-column: 1 / -1;
+    padding-left: 44px;
+    width: 50%;
   }
 
   .admin-record-summary,
