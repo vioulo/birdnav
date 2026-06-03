@@ -1,4 +1,5 @@
 import { V1Experience } from "@/components/v1-experience";
+import { headers } from "next/headers";
 import {
   getOptionValue,
   isSiteClickBehavior,
@@ -7,6 +8,7 @@ import {
 } from "@/lib/options";
 import { prisma } from "@/lib/prisma";
 import { getThemeMode } from "@/lib/theme";
+import { appendUtmSource, extractUtmSource } from "@/lib/utils";
 
 type V1Site = {
   id: number;
@@ -24,6 +26,9 @@ type V1Category = {
 };
 
 export default async function V1Page() {
+  const headersList = await headers();
+  const utmSource = extractUtmSource(headersList.get("host") || "");
+
   const [
     categories,
     siteTitle,
@@ -81,7 +86,7 @@ export default async function V1Page() {
         sites: category.sites.map((site) => ({
           id: site.id,
           name: site.name,
-          href: clickBehavior === "detail" ? `/v1/site/${site.slug}` : site.url,
+          href: clickBehavior === "detail" ? `/v1/site/${site.slug}` : appendUtmSource(site.url, utmSource),
           url: site.url,
           iconUrl: site.iconUrl,
           description: site.description,

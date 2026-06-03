@@ -2,6 +2,7 @@ import type { CSSProperties } from "react";
 import type { Prisma } from "@prisma/client";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { headers } from "next/headers";
 
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
@@ -9,6 +10,7 @@ import { SiteIcon } from "@/components/site-icon";
 import { getOptionValue, parseFooterLinks } from "@/lib/options";
 import { prisma } from "@/lib/prisma";
 import { getThemeMode } from "@/lib/theme";
+import { appendUtmSource, extractUtmSource } from "@/lib/utils";
 
 export default async function SiteDetailPage({
   params,
@@ -16,6 +18,8 @@ export default async function SiteDetailPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
+  const headersList = await headers();
+  const utmSource = extractUtmSource(headersList.get("host") || "");
   const legacySiteId = /^\d+$/.test(slug) ? Number(slug) : null;
   const siteWhere: Prisma.SiteWhereUniqueInput = legacySiteId
     ? { id: legacySiteId }
@@ -88,7 +92,7 @@ export default async function SiteDetailPage({
             <Link className="detail-button" href="/">
               返回首页
             </Link>
-            <a className="detail-button is-primary" href={site.url} target="_blank" rel="noreferrer">
+            <a className="detail-button is-primary" href={appendUtmSource(site.url, utmSource)} target="_blank" rel="noreferrer">
               访问站点 ↗
             </a>
           </div>

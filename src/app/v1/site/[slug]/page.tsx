@@ -1,6 +1,7 @@
 import type { Prisma } from "@prisma/client";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { ExternalLink, MoveLeft } from "lucide-react";
 
 import { SiteIcon } from "@/components/site-icon";
@@ -8,6 +9,7 @@ import { V1Shell } from "@/components/v1-shell";
 import { getOptionValue, parseFooterLinks } from "@/lib/options";
 import { prisma } from "@/lib/prisma";
 import { getThemeMode } from "@/lib/theme";
+import { appendUtmSource, extractUtmSource } from "@/lib/utils";
 
 export default async function V1SiteDetailPage({
   params,
@@ -15,6 +17,8 @@ export default async function V1SiteDetailPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
+  const headersList = await headers();
+  const utmSource = extractUtmSource(headersList.get("host") || "");
   const legacySiteId = /^\d+$/.test(slug) ? Number(slug) : null;
   const siteWhere: Prisma.SiteWhereUniqueInput = legacySiteId
     ? { id: legacySiteId }
@@ -81,7 +85,7 @@ export default async function V1SiteDetailPage({
               <MoveLeft aria-hidden="true" />
               返回 V1
             </Link>
-            <a className="v1-detail-button is-primary" href={site.url} target="_blank" rel="noreferrer">
+            <a className="v1-detail-button is-primary" href={appendUtmSource(site.url, utmSource)} target="_blank" rel="noreferrer">
               访问站点
               <ExternalLink aria-hidden="true" />
             </a>

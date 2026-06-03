@@ -1,5 +1,6 @@
 import { HomeExperience } from "@/components/home-experience";
 import { SiteFooter } from "@/components/site-footer";
+import { headers } from "next/headers";
 import {
   getOptionValue,
   isSiteClickBehavior,
@@ -8,6 +9,7 @@ import {
 } from "@/lib/options";
 import { prisma } from "@/lib/prisma";
 import { getThemeMode } from "@/lib/theme";
+import { appendUtmSource, extractUtmSource } from "@/lib/utils";
 
 type HomeSite = {
   id: number;
@@ -56,6 +58,8 @@ export default async function HomePage({
   const params = await searchParams;
   const selectedCategory = params.category?.trim() || "all";
   const search = params.q?.trim() || "";
+  const headersList = await headers();
+  const utmSource = extractUtmSource(headersList.get("host") || "");
 
   const [
     categories,
@@ -121,7 +125,7 @@ export default async function HomePage({
     category.sites.map((site) => ({
       id: site.id,
       name: site.name,
-      href: clickBehavior === "detail" ? `/site/${site.slug}` : site.url,
+      href: clickBehavior === "detail" ? `/site/${site.slug}` : appendUtmSource(site.url, utmSource),
       iconUrl: site.iconUrl,
       color: category.color,
       categoryName: category.name,
