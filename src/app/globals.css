@@ -1002,7 +1002,6 @@ html[data-theme-canvas="running"] *::after {
 
 .detail-description p:last-child {
   margin-top: 10px;
-  max-width: 76ch;
   font-size: 0.92rem;
   line-height: 1.85;
   color: var(--color-muted);
