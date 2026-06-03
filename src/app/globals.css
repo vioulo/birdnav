@@ -410,8 +410,8 @@ html[data-theme="dark"] .promo-hero,
 html[data-theme="dark"] .promo-mini,
 html[data-theme="dark"] .link-field,
 html[data-theme="dark"] .link-pill {
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+  --_blur: blur(14px);
+  backdrop-filter: var(--_blur);
 }
 
 .header-brand {
@@ -1170,8 +1170,8 @@ html[data-theme="dark"] .detail-button.is-primary:hover {
   border-bottom: 1px solid var(--v1-line);
   background: color-mix(in srgb, var(--v1-bg) 78%, transparent);
   padding: 18px 24px;
-  backdrop-filter: saturate(160%) blur(18px);
-  -webkit-backdrop-filter: saturate(160%) blur(18px);
+  --_blur: saturate(160%) blur(18px);
+  backdrop-filter: var(--_blur);
 }
 
 .v1-topbar-inner {
@@ -1996,9 +1996,9 @@ html[data-theme="dark"] .detail-button.is-primary:hover {
   margin-bottom: 12px;
   border: 1px solid var(--color-line);
   background:
-    linear-gradient(135deg, color-mix(in srgb, var(--color-accent) 4%, var(--color-panel)), var(--color-panel) 50%);
-  backdrop-filter: blur(10px) saturate(180%);
-  -webkit-backdrop-filter: blur(10px) saturate(180%);
+    linear-gradient(135deg, color-mix(in srgb, var(--color-accent) 4%, color-mix(in srgb, var(--color-panel) 88%, transparent)), color-mix(in srgb, var(--color-panel) 85%, transparent) 50%);
+  --_blur: blur(10px) saturate(180%);
+  backdrop-filter: var(--_blur);
   padding: 16px;
 }
 
@@ -2346,9 +2346,9 @@ html[data-theme="dark"] .detail-button.is-primary:hover {
   gap: 10px;
   align-items: center;
   border-bottom: 1px solid var(--color-line);
-  background: var(--color-panel);
-  backdrop-filter: blur(10px) saturate(180%);
-  -webkit-backdrop-filter: blur(10px) saturate(180%);
+  background: color-mix(in srgb, var(--color-panel) 88%, transparent);
+  --_blur: blur(10px) saturate(180%);
+  backdrop-filter: var(--_blur);
   padding: 8px 12px;
   font-family: var(--font-plex-mono), monospace;
   font-size: 0.58rem;
@@ -2804,7 +2804,7 @@ html[data-theme="dark"] .detail-button.is-primary:hover {
 
 .list-head {
   position: sticky;
-  top: 120px;
+  top: 118px;
   z-index: 20;
   border-bottom: 1px solid var(--color-line);
   font-family: var(--font-mono), monospace;
@@ -2812,9 +2812,9 @@ html[data-theme="dark"] .detail-button.is-primary:hover {
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--color-muted);
-  background: var(--color-panel);
-  backdrop-filter: blur(10px) saturate(180%);
-  -webkit-backdrop-filter: blur(10px) saturate(180%);
+  background: color-mix(in srgb, var(--color-panel) 88%, transparent);
+  --_blur: blur(10px) saturate(180%);
+  backdrop-filter: var(--_blur);
 }
 
 .list-row {
@@ -2864,8 +2864,8 @@ html[data-theme="dark"] .detail-button.is-primary:hover {
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.35);
-  -webkit-backdrop-filter: blur(14px) saturate(140%);
-  backdrop-filter: blur(14px) saturate(140%);
+  --_blur: blur(14px) saturate(140%);
+  backdrop-filter: var(--_blur);
   display: flex;
   align-items: center;
   justify-content: center;
