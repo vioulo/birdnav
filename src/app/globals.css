@@ -1903,6 +1903,20 @@ html[data-theme="dark"] .detail-button.is-primary:hover {
   padding: 10px 12px;
   font-size: 0.86rem;
   color: var(--color-muted);
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.admin-nav-icon {
+  flex-shrink: 0;
+  color: var(--color-muted);
+  transition: color 0.15s ease;
+}
+
+.admin-nav-link:hover .admin-nav-icon,
+.admin-nav-link.active .admin-nav-icon {
+  color: var(--color-ink);
 }
 
 .admin-nav-link:hover,
@@ -1929,7 +1943,7 @@ html[data-theme="dark"] .detail-button.is-primary:hover {
 
 .admin-nav-link.is-front-stage::after {
   content: "↗";
-  float: right;
+  margin-left: auto;
   font-family: var(--font-plex-mono), monospace;
   color: var(--color-accent);
 }
@@ -2845,6 +2859,12 @@ html[data-theme="dark"] .detail-button.is-primary:hover {
     flex: 0 0 auto;
     padding: 7px 9px;
     white-space: nowrap;
+    gap: 6px;
+  }
+
+  .admin-nav-icon {
+    width: 14px;
+    height: 14px;
   }
 
   .admin-logout {
