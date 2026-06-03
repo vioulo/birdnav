@@ -1828,26 +1828,26 @@ html[data-theme="dark"] .detail-button.is-primary:hover {
 }
 
 .admin-shell {
-  min-height: 100vh;
+  height: 100vh;
   color: var(--color-ink);
+  overflow: hidden;
 }
 
 .admin-shell-grid {
   display: grid;
-  min-height: 100vh;
+  height: 100vh;
   width: 100%;
   max-width: 1440px;
   margin: 0 auto;
   grid-template-columns: 260px minmax(0, 1fr);
   gap: 16px;
   padding: 24px;
+  overflow: hidden;
 }
 
 .admin-sidebar {
-  position: sticky;
-  top: 24px;
   display: flex;
-  height: calc(100vh - 48px);
+  height: 100%;
   min-height: 0;
   flex-direction: column;
   overflow: hidden;
@@ -1948,6 +1948,16 @@ html[data-theme="dark"] .detail-button.is-primary:hover {
 
 .admin-content {
   min-width: 0;
+  height: 100%;
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-content::-webkit-scrollbar {
+  display: none;
 }
 
 .admin-toolbar {
@@ -1961,8 +1971,9 @@ html[data-theme="dark"] .detail-button.is-primary:hover {
 
 .admin-page-header {
   position: sticky;
-  top: 24px;
-  z-index: 70;
+  top: 0;
+  z-index: 30;
+  flex-shrink: 0;
   display: flex;
   flex-wrap: wrap;
   align-items: flex-end;
@@ -1971,10 +1982,9 @@ html[data-theme="dark"] .detail-button.is-primary:hover {
   margin-bottom: 12px;
   border: 1px solid var(--color-line);
   background:
-    linear-gradient(135deg, color-mix(in srgb, var(--color-accent) 7%, transparent), transparent 62%),
-    color-mix(in srgb, var(--color-panel) 90%, transparent);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+    linear-gradient(135deg, color-mix(in srgb, var(--color-accent) 4%, var(--color-panel)), var(--color-panel) 50%);
+  backdrop-filter: blur(10px) saturate(180%);
+  -webkit-backdrop-filter: blur(10px) saturate(180%);
   padding: 16px;
 }
 
@@ -2315,10 +2325,16 @@ html[data-theme="dark"] .detail-button.is-primary:hover {
 }
 
 .admin-data-table-columns {
+  position: sticky;
+  top: 118px;
+  z-index: 20;
   display: grid;
   gap: 10px;
   align-items: center;
   border-bottom: 1px solid var(--color-line);
+  background: var(--color-panel);
+  backdrop-filter: blur(10px) saturate(180%);
+  -webkit-backdrop-filter: blur(10px) saturate(180%);
   padding: 8px 12px;
   font-family: var(--font-plex-mono), monospace;
   font-size: 0.58rem;
@@ -2583,13 +2599,18 @@ html[data-theme="dark"] .detail-button.is-primary:hover {
 }
 
 .list-head {
+  position: sticky;
+  top: 120px;
+  z-index: 20;
   border-bottom: 1px solid var(--color-line);
   font-family: var(--font-mono), monospace;
   font-size: 0.72rem;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--color-muted);
-  background: var(--color-panel-soft);
+  background: var(--color-panel);
+  backdrop-filter: blur(10px) saturate(180%);
+  -webkit-backdrop-filter: blur(10px) saturate(180%);
 }
 
 .list-row {
@@ -2711,6 +2732,13 @@ html[data-theme="dark"] .detail-button.is-primary:hover {
     grid-template-columns: 1fr;
     gap: 12px;
     padding: 12px;
+    height: auto;
+    overflow: visible;
+  }
+
+  .admin-shell {
+    height: auto;
+    overflow: visible;
   }
 
   .admin-sidebar {
@@ -2718,6 +2746,11 @@ html[data-theme="dark"] .detail-button.is-primary:hover {
     top: 0;
     z-index: 90;
     height: auto;
+  }
+
+  .admin-content {
+    height: auto;
+    overflow: visible;
   }
 
   .admin-sidebar-head {
