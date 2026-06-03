@@ -416,7 +416,7 @@ export default async function AdminSitesPage({
                 <textarea
                   className="input min-h-24 resize-y"
                   name="description"
-                  placeholder="一句话说明这个站点是做什么的"
+                  placeholder="留空自动抓取站点描述"
                 />
               </label>
               <label className="block space-y-2">

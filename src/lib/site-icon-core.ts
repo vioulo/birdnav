@@ -129,7 +129,7 @@ function isPrivateOrLoopbackAddress(address: string) {
   return true;
 }
 
-async function resolvePublicHttpUrl(candidateUrl: string) {
+export async function resolvePublicHttpUrl(candidateUrl: string) {
   let url: URL;
 
   try {
@@ -279,7 +279,7 @@ async function readLimitedHtml(response: Response) {
   return html;
 }
 
-async function fetchSiteHtml(siteUrl: string) {
+export async function fetchSiteHtml(siteUrl: string) {
   let currentUrl = siteUrl;
 
   for (let redirectCount = 0; redirectCount <= MAX_REDIRECTS; redirectCount += 1) {

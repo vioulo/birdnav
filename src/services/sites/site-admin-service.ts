@@ -2,9 +2,19 @@ import { recordAuditLog } from "@/lib/audit";
 import { getActionErrorMessage } from "@/lib/db-errors";
 import { prisma } from "@/lib/prisma";
 import { discoverSiteIconUrl } from "@/lib/site-icon";
+import { discoverSiteDescription } from "@/lib/site-meta";
 import { buildDefaultSiteSlug, createUniqueSiteSlug, isSiteSlugAvailable } from "@/lib/site-slug";
 
 const DEFAULT_SORT_INCREMENT = 10;
+
+async function discoverSiteIconAndDescription(siteUrl: string) {
+  const [iconUrl, description] = await Promise.all([
+    discoverSiteIconUrl(siteUrl),
+    discoverSiteDescription(siteUrl),
+  ]);
+
+  return { iconUrl, description };
+}
 
 function normalizeImportUrl(input: string) {
   const trimmed = input.trim();
@@ -130,10 +140,14 @@ export async function createAdminSite(params: {
     throw new Error("站点 Slug 已存在，请换一个。");
   }
 
-  const resolvedIconUrl = params.iconUrl || (await discoverSiteIconUrl(params.url));
   const resolvedSortOrder = params.hasManualSortOrder
     ? params.sortOrder
     : await getNextSiteSortOrder();
+
+  const { iconUrl: discoveredIcon, description: discoveredDescription } =
+    await discoverSiteIconAndDescription(params.url);
+  const resolvedIconUrl = params.iconUrl || discoveredIcon;
+  const resolvedDescription = params.description || discoveredDescription;
 
   const createdSite = await prisma.site.create({
     data: {
@@ -142,7 +156,7 @@ export async function createAdminSite(params: {
       slug: siteSlug,
       url: params.url,
       iconUrl: resolvedIconUrl,
-      description: params.description || null,
+      description: resolvedDescription || null,
       featureImage: params.featureImage || null,
       isFeatured: params.isFeatured,
       sortOrder: resolvedSortOrder,
@@ -160,6 +174,7 @@ export async function createAdminSite(params: {
       catId: createdSite.catId,
       slug: createdSite.slug,
       autoDiscoveredIcon: !params.iconUrl && !!createdSite.iconUrl,
+      autoDiscoveredDescription: !params.description && !!createdSite.description,
       isFeatured: createdSite.isFeatured,
       isPublished: createdSite.isPublished,
     },
@@ -188,7 +203,11 @@ export async function updateAdminSite(params: {
     throw new Error("站点 Slug 已存在，请换一个。");
   }
 
-  const resolvedIconUrl = params.iconUrl || (await discoverSiteIconUrl(params.url));
+  const { iconUrl: discoveredIcon, description: discoveredDescription } =
+    await discoverSiteIconAndDescription(params.url);
+  const resolvedIconUrl = params.iconUrl || discoveredIcon;
+  const resolvedDescription = params.description || discoveredDescription;
+
   const updatedSite = await prisma.site.update({
     where: { id: params.siteId },
     data: {
@@ -197,7 +216,7 @@ export async function updateAdminSite(params: {
       slug: siteSlug,
       url: params.url,
       iconUrl: resolvedIconUrl,
-      description: params.description || null,
+      description: resolvedDescription || null,
       featureImage: params.featureImage || null,
       isFeatured: params.isFeatured,
       sortOrder: params.sortOrder,
@@ -324,10 +343,10 @@ export async function bulkImportAdminSites(params: {
   const preparedSites = await mapWithConcurrency(
     sitesWithSlugs,
     params.iconConcurrency,
-    async (site) => ({
-      ...site,
-      iconUrl: await discoverSiteIconUrl(site.url),
-    }),
+    async (site) => {
+      const { iconUrl, description } = await discoverSiteIconAndDescription(site.url);
+      return { ...site, iconUrl, description };
+    },
   );
 
   const created = await prisma.site.createMany({
@@ -337,6 +356,7 @@ export async function bulkImportAdminSites(params: {
       slug: site.slug,
       url: site.url,
       iconUrl: site.iconUrl,
+      description: site.description || null,
       sortOrder: site.sortOrder,
       isPublished: params.isPublished,
     })),

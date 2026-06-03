@@ -5,6 +5,7 @@ import { getActionErrorMessage } from "@/lib/db-errors";
 import { prisma } from "@/lib/prisma";
 import { consumeRateLimit } from "@/lib/public-rate-limit";
 import { discoverSiteIconUrl } from "@/lib/site-icon";
+import { discoverSiteDescription } from "@/lib/site-meta";
 import { buildDefaultSiteSlug, createUniqueSiteSlug } from "@/lib/site-slug";
 import { parsePublicSiteApply } from "@/lib/validation";
 
@@ -139,7 +140,10 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const resolvedIconUrl = iconUrl || await discoverSiteIconUrl(url);
+    const [resolvedIconUrl, resolvedDescription] = await Promise.all([
+      iconUrl ? Promise.resolve(iconUrl) : discoverSiteIconUrl(url),
+      description ? Promise.resolve(description) : discoverSiteDescription(url),
+    ]);
     const slug = await createUniqueSiteSlug(buildDefaultSiteSlug(url));
     const sortOrder = await getNextSiteSortOrder();
 
@@ -150,7 +154,7 @@ export async function POST(request: NextRequest) {
         slug,
         url,
         iconUrl: resolvedIconUrl,
-        description: description || null,
+        description: resolvedDescription || null,
         isFeatured: false,
         featureImage: null,
         sortOrder,
