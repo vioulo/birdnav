@@ -1,8 +1,6 @@
 import Link from "next/link";
 
 import { AdminPageHeader } from "@/components/admin-page-header";
-import { AdminShell } from "@/components/admin-shell";
-import { requireAdmin } from "@/lib/auth";
 import { appVersion } from "@/lib/app-version";
 import { prisma } from "@/lib/prisma";
 
@@ -10,7 +8,6 @@ const RECENT_ACTIVITY_LIMIT = 5;
 const OVERVIEW_CATEGORY_LIMIT = 10;
 
 export default async function AdminDashboardPage() {
-  const admin = await requireAdmin();
   const [
     userCount,
     categoryCount,
@@ -62,7 +59,7 @@ export default async function AdminDashboardPage() {
   ];
 
   return (
-    <AdminShell currentPath="/admin" username={admin.username}>
+    <>
       <AdminPageHeader
         eyebrow="Overview"
         title="导航站概览"
@@ -194,6 +191,6 @@ export default async function AdminDashboardPage() {
       </div>
 
       <p className="admin-overview-version">{appVersion}</p>
-    </AdminShell>
+    </>
   );
 }

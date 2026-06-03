@@ -2,8 +2,6 @@ import { updateOptionsAction } from "@/app/admin/options/actions";
 import { buildCurrentOptions } from "@/app/admin/options/schema";
 import { AdminFeedback } from "@/components/admin-feedback";
 import { AdminPageHeader } from "@/components/admin-page-header";
-import { AdminShell } from "@/components/admin-shell";
-import { requireAdmin } from "@/lib/auth";
 import { getOptionsMap, parseFooterLinks } from "@/lib/options";
 
 export default async function AdminOptionsPage({
@@ -11,7 +9,6 @@ export default async function AdminOptionsPage({
 }: {
   searchParams: Promise<{ success?: string; error?: string }>;
 }) {
-  const admin = await requireAdmin();
   const params = await searchParams;
   const storedOptions = await getOptionsMap();
   const successMessage = params.success?.trim();
@@ -20,7 +17,7 @@ export default async function AdminOptionsPage({
   const footerLinks = parseFooterLinks(currentOptions["footer.links"]);
 
   return (
-    <AdminShell currentPath="/admin/options" username={admin.username}>
+    <>
       <AdminPageHeader
         eyebrow="Options"
         title="基础配置"
@@ -204,6 +201,6 @@ export default async function AdminOptionsPage({
           </div>
         </section>
       </form>
-    </AdminShell>
+    </>
   );
 }

@@ -1,6 +1,4 @@
 import { AdminPageHeader } from "@/components/admin-page-header";
-import { AdminShell } from "@/components/admin-shell";
-import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 const PAGE_SIZE = 20;
@@ -14,7 +12,6 @@ export default async function AdminLogsPage({
 }: {
   searchParams: Promise<{ page?: string }>;
 }) {
-  const admin = await requireAdmin();
   const params = await searchParams;
   const page = Math.max(1, Number(params.page || "1") || 1);
   const skip = (page - 1) * PAGE_SIZE;
@@ -38,7 +35,7 @@ export default async function AdminLogsPage({
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   return (
-    <AdminShell currentPath="/admin/logs" username={admin.username}>
+    <>
       <AdminPageHeader
         eyebrow="Audit Logs"
         title="操作日志"
@@ -106,6 +103,6 @@ export default async function AdminLogsPage({
           </div>
         ) : null}
       </section>
-    </AdminShell>
+    </>
   );
 }

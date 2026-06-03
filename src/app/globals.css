@@ -2369,6 +2369,61 @@ html[data-theme="dark"] .detail-button.is-primary:hover {
   display: grid;
 }
 
+.admin-skeleton-row {
+  display: grid;
+  grid-template-columns: 40px minmax(220px, 1.4fr) minmax(120px, 0.7fr) minmax(74px, 0.35fr) minmax(92px, 0.42fr) minmax(92px, 0.42fr) 50px;
+  gap: 10px;
+  align-items: center;
+  padding: 14px 12px;
+  border-top: 1px solid var(--color-line);
+}
+
+.admin-skeleton-row:first-child {
+  border-top: 0;
+}
+
+.admin-skeleton {
+  display: block;
+  border-radius: 4px;
+  background: linear-gradient(90deg, var(--color-panel-soft) 25%, var(--color-line) 50%, var(--color-panel-soft) 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s ease-in-out infinite;
+}
+
+.admin-skeleton-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+}
+
+.admin-skeleton-text {
+  height: 14px;
+  width: 70%;
+}
+
+.admin-skeleton-badge {
+  height: 12px;
+  width: 60%;
+}
+
+.admin-skeleton-actions {
+  height: 12px;
+  width: 40%;
+  justify-self: end;
+}
+
+@keyframes skeleton-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.admin-loading-shell {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
 .admin-record {
   border-top: 1px solid var(--color-line);
 }

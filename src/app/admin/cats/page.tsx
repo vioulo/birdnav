@@ -15,10 +15,9 @@ import {
 } from "@/app/admin/cats/schema";
 import { AdminFeedback } from "@/components/admin-feedback";
 import { AdminPageHeader } from "@/components/admin-page-header";
-import { AdminShell } from "@/components/admin-shell";
 import { ConfirmSubmitButton } from "@/components/confirm-submit-button";
 import { ModalEscClose } from "@/components/modal-esc-close";
-import { requireAdmin } from "@/lib/auth";
+import { SubmitButton } from "@/components/submit-button";
 import { prisma } from "@/lib/prisma";
 
 export default async function AdminCategoriesPage({
@@ -32,7 +31,6 @@ export default async function AdminCategoriesPage({
     q?: string;
   }>;
 }) {
-  const admin = await requireAdmin();
   const params = await searchParams;
   const page = Math.max(1, Number(params.page || "1") || 1);
   const isCreateModalOpen = params.modal === "new";
@@ -62,7 +60,7 @@ export default async function AdminCategoriesPage({
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   return (
-    <AdminShell currentPath="/admin/cats" username={admin.username}>
+    <>
       <AdminPageHeader
         eyebrow="Categories"
         title="分类列表"
@@ -173,9 +171,9 @@ export default async function AdminCategoriesPage({
                       当前分类下有 {category._count.sites} 个站点。
                     </span>
                     <div className="list-actions">
-                      <button className="button-secondary" type="submit">
+                      <SubmitButton className="button-secondary" loadingText="保存中...">
                         保存
-                      </button>
+                      </SubmitButton>
                       <ConfirmSubmitButton
                         className="button-danger"
                         formAction={deleteCategoryAction}
@@ -265,14 +263,14 @@ export default async function AdminCategoriesPage({
                 <Link className="button-secondary" href={buildCatsHref(page, keyword)}>
                   取消
                 </Link>
-                <button className="button-primary" type="submit">
+                <SubmitButton className="button-primary" loadingText="保存中...">
                   保存分类
-                </button>
+                </SubmitButton>
               </div>
             </form>
           </div>
         </div>
       ) : null}
-    </AdminShell>
+    </>
   );
 }

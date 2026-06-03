@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { Send, X } from "lucide-react";
+import { Loader2, Send, X } from "lucide-react";
 
 type SiteApplyDialogProps = {
   categories: Array<{
@@ -169,7 +169,11 @@ export function SiteApplyDialog({ categories }: SiteApplyDialogProps) {
                   取消
                 </button>
                 <button className="button-primary" type="submit" disabled={isSubmitting}>
-                  <Send aria-hidden="true" />
+                  {isSubmitting ? (
+                    <Loader2 className="animate-spin" aria-hidden="true" />
+                  ) : (
+                    <Send aria-hidden="true" />
+                  )}
                   {isSubmitting ? "提交中" : "提交申请"}
                 </button>
               </div>

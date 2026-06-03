@@ -2,7 +2,6 @@ import { redirect } from "next/navigation";
 
 import { AdminFeedback } from "@/components/admin-feedback";
 import { AdminPageHeader } from "@/components/admin-page-header";
-import { AdminShell } from "@/components/admin-shell";
 import { changeAdminPassword, requireAdmin } from "@/lib/auth";
 import { recordAuditLog } from "@/lib/audit";
 import { parsePasswordChangeForm } from "@/lib/validation";
@@ -57,13 +56,12 @@ export default async function AdminAccountPage({
 }: {
   searchParams: Promise<{ success?: string; error?: string }>;
 }) {
-  const admin = await requireAdmin();
   const params = await searchParams;
   const successMessage = params.success?.trim();
   const errorMessage = params.error?.trim();
 
   return (
-    <AdminShell currentPath="/admin/account" username={admin.username}>
+    <>
       <AdminPageHeader
         eyebrow="Account"
         title="账户安全"
@@ -93,6 +91,6 @@ export default async function AdminAccountPage({
           </div>
         </form>
       </section>
-    </AdminShell>
+    </>
   );
 }

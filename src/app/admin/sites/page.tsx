@@ -21,11 +21,10 @@ import {
 } from "@/app/admin/sites/schema";
 import { AdminFeedback } from "@/components/admin-feedback";
 import { AdminPageHeader } from "@/components/admin-page-header";
-import { AdminShell } from "@/components/admin-shell";
 import { ConfirmSubmitButton } from "@/components/confirm-submit-button";
 import { ModalEscClose } from "@/components/modal-esc-close";
+import { SubmitButton } from "@/components/submit-button";
 import { SiteIcon } from "@/components/site-icon";
-import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 export default async function AdminSitesPage({
@@ -42,7 +41,6 @@ export default async function AdminSitesPage({
     published?: string;
   }>;
 }) {
-  const admin = await requireAdmin();
   const params = await searchParams;
   const page = Math.max(1, Number(params.page || "1") || 1);
   const isCreateModalOpen = params.modal === "new";
@@ -89,7 +87,7 @@ export default async function AdminSitesPage({
   ].filter(Boolean).length;
 
   return (
-    <AdminShell currentPath="/admin/sites" username={admin.username}>
+    <>
       <AdminPageHeader
         eyebrow="Sites"
         title="站点列表"
@@ -299,9 +297,9 @@ export default async function AdminSitesPage({
                       发布
                     </label>
                     <div className="list-actions">
-                      <button className="button-secondary" type="submit">
+                      <SubmitButton className="button-secondary" loadingText="保存中...">
                         保存
-                      </button>
+                      </SubmitButton>
                       <ConfirmSubmitButton
                         className="button-danger"
                         formAction={deleteSiteAction}
@@ -442,9 +440,9 @@ export default async function AdminSitesPage({
                 <Link className="button-secondary" href={buildSitesHref(page, filters)}>
                   取消
                 </Link>
-                <button className="button-primary" type="submit">
+                <SubmitButton className="button-primary" loadingText="保存中...">
                   保存站点
-                </button>
+                </SubmitButton>
               </div>
             </form>
           </div>
@@ -509,14 +507,14 @@ export default async function AdminSitesPage({
                 <Link className="button-secondary" href={buildSitesHref(page, filters)}>
                   取消
                 </Link>
-                <button className="button-primary" type="submit">
+                <SubmitButton className="button-primary" loadingText="导入中...">
                   开始导入
-                </button>
+                </SubmitButton>
               </div>
             </form>
           </div>
         </div>
       ) : null}
-    </AdminShell>
+    </>
   );
 }
