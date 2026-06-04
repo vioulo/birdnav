@@ -398,7 +398,6 @@ input[type="color"].input {
   background: color-mix(in srgb, var(--color-panel) 90%, transparent);
 }
 
-html[data-theme="dark"] .site-header,
 html[data-theme="dark"] .site-footer,
 html[data-theme="dark"] .detail-card,
 html[data-theme="dark"] .admin-sidebar,
