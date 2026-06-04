@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type SyntheticEvent } from "react";
+import { createPortal } from "react-dom";
 import { Loader2, Send, X } from "lucide-react";
 
 type SiteApplyDialogProps = {
@@ -32,6 +33,11 @@ export function SiteApplyDialog({ categories }: SiteApplyDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [status, setStatus] = useState<ApplyStatus | null>(null);
+  const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
+
+  useEffect(() => {
+    setPortalTarget(document.body);
+  }, []);
 
   useEffect(() => {
     if (!isOpen) {
@@ -50,7 +56,7 @@ export function SiteApplyDialog({ categories }: SiteApplyDialogProps) {
     };
   }, [isOpen]);
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: SyntheticEvent<HTMLFormElement, SubmitEvent>) {
     event.preventDefault();
     setIsSubmitting(true);
     setStatus(null);
@@ -105,82 +111,85 @@ export function SiteApplyDialog({ categories }: SiteApplyDialogProps) {
         申请收录
       </button>
 
-      {isOpen ? (
-        <div className="modal-overlay site-apply-overlay">
-          <div className="modal-card site-apply-card">
-            <div className="modal-header">
-              <div>
-                <p className="eyebrow">Submit</p>
-                <h3 className="mt-1 text-xl font-semibold">申请收录</h3>
+      {isOpen && portalTarget
+        ? createPortal(
+            <div className="modal-overlay site-apply-overlay">
+              <div className="modal-card site-apply-card">
+                <div className="modal-header">
+                  <div>
+                    <p className="eyebrow">Submit</p>
+                    <h3 className="mt-1 text-xl font-semibold">申请收录</h3>
+                  </div>
+                  <button
+                    className="button-secondary site-apply-close"
+                    type="button"
+                    aria-label="关闭"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    <X aria-hidden="true" />
+                  </button>
+                </div>
+                <form ref={formRef} className="modal-body admin-form-grid" onSubmit={handleSubmit}>
+                  <label className="block space-y-2">
+                    <span className="text-sm font-medium">所属分类</span>
+                    <select className="input" name="catId" required defaultValue="">
+                      <option value="" disabled>
+                        选择分类
+                      </option>
+                      {categories.map((category) => (
+                        <option key={category.id} value={category.id}>
+                          {category.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="block space-y-2">
+                    <span className="text-sm font-medium">站点名称</span>
+                    <input className="input" name="name" placeholder="例如：GitHub" required />
+                  </label>
+                  <label className="block space-y-2">
+                    <span className="text-sm font-medium">链接</span>
+                    <input className="input" name="url" placeholder="https://github.com" required />
+                  </label>
+                  <label className="block space-y-2">
+                    <span className="text-sm font-medium">站点 Icon</span>
+                    <input className="input" name="iconUrl" placeholder="可选，留空自动尝试抓取" />
+                  </label>
+                  <label className="block space-y-2">
+                    <span className="text-sm font-medium">简介</span>
+                    <textarea
+                      className="input min-h-24 resize-y"
+                      name="description"
+                      placeholder="一句话说明这个站点是做什么的"
+                    />
+                  </label>
+                  {status ? (
+                    <p className={`site-apply-status is-${status.type}`}>{status.message}</p>
+                  ) : null}
+                  <div className="flex justify-end gap-2">
+                    <button
+                      className="button-secondary"
+                      type="button"
+                      onClick={() => setIsOpen(false)}
+                      disabled={isSubmitting}
+                    >
+                      取消
+                    </button>
+                    <button className="button-primary" type="submit" disabled={isSubmitting}>
+                      {isSubmitting ? (
+                        <Loader2 className="animate-spin" aria-hidden="true" />
+                      ) : (
+                        <Send aria-hidden="true" />
+                      )}
+                      {isSubmitting ? "提交中" : "提交申请"}
+                    </button>
+                  </div>
+                </form>
               </div>
-              <button
-                className="button-secondary site-apply-close"
-                type="button"
-                aria-label="关闭"
-                onClick={() => setIsOpen(false)}
-              >
-                <X aria-hidden="true" />
-              </button>
-            </div>
-            <form ref={formRef} className="modal-body admin-form-grid" onSubmit={handleSubmit}>
-              <label className="block space-y-2">
-                <span className="text-sm font-medium">所属分类</span>
-                <select className="input" name="catId" required defaultValue="">
-                  <option value="" disabled>
-                    选择分类
-                  </option>
-                  {categories.map((category) => (
-                    <option key={category.id} value={category.id}>
-                      {category.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="block space-y-2">
-                <span className="text-sm font-medium">站点名称</span>
-                <input className="input" name="name" placeholder="例如：GitHub" required />
-              </label>
-              <label className="block space-y-2">
-                <span className="text-sm font-medium">链接</span>
-                <input className="input" name="url" placeholder="https://github.com" required />
-              </label>
-              <label className="block space-y-2">
-                <span className="text-sm font-medium">站点 Icon</span>
-                <input className="input" name="iconUrl" placeholder="可选，留空自动尝试抓取" />
-              </label>
-              <label className="block space-y-2">
-                <span className="text-sm font-medium">简介</span>
-                <textarea
-                  className="input min-h-24 resize-y"
-                  name="description"
-                  placeholder="一句话说明这个站点是做什么的"
-                />
-              </label>
-              {status ? (
-                <p className={`site-apply-status is-${status.type}`}>{status.message}</p>
-              ) : null}
-              <div className="flex justify-end gap-2">
-                <button
-                  className="button-secondary"
-                  type="button"
-                  onClick={() => setIsOpen(false)}
-                  disabled={isSubmitting}
-                >
-                  取消
-                </button>
-                <button className="button-primary" type="submit" disabled={isSubmitting}>
-                  {isSubmitting ? (
-                    <Loader2 className="animate-spin" aria-hidden="true" />
-                  ) : (
-                    <Send aria-hidden="true" />
-                  )}
-                  {isSubmitting ? "提交中" : "提交申请"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      ) : null}
+            </div>,
+            portalTarget,
+          )
+        : null}
     </>
   );
 }
