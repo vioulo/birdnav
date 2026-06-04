@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.5.2 - 2026-06-04
+
+### Fixed
+- 更新 admin panel backdrop-filter 样式
+- 修复 apply modal 挤压问题
+
 ## v0.5.0 - 2026-06-03
 
 ### Added
