@@ -25,6 +25,7 @@
   --color-button-primary-hover-bg: #ede9e2;
   --pattern-dot: rgba(139, 115, 85, 0.06);
   --ui-radius: 0px;
+  --blur: blur(10px);
 }
 
 html[data-theme="light"] {
@@ -396,12 +397,12 @@ input[type="color"].input {
   padding: 10px 18px;
   border-bottom: 1px solid var(--color-line);
   background: color-mix(in srgb, var(--color-panel) 90%, transparent);
+  backdrop-filter: var(--blur);
 }
 
 html[data-theme="dark"] .site-footer,
 html[data-theme="dark"] .detail-card,
 html[data-theme="dark"] .admin-sidebar,
-html[data-theme="dark"] .admin-page-header,
 html[data-theme="dark"] .admin-record-shell,
 html[data-theme="dark"] .modal-card,
 html[data-theme="dark"] .header-action-link,
@@ -409,8 +410,7 @@ html[data-theme="dark"] .promo-hero,
 html[data-theme="dark"] .promo-mini,
 html[data-theme="dark"] .link-field,
 html[data-theme="dark"] .link-pill {
-  --_blur: blur(14px);
-  backdrop-filter: var(--_blur);
+  backdrop-filter: var(--blur);
 }
 
 .header-brand {
@@ -1176,8 +1176,8 @@ html[data-theme="dark"] .detail-button.is-primary:hover {
   border-bottom: 1px solid var(--v1-line);
   background: color-mix(in srgb, var(--v1-bg) 78%, transparent);
   padding: 18px 24px;
-  --_blur: saturate(160%) blur(18px);
-  backdrop-filter: var(--_blur);
+  --blur: blur(18px) saturate(160%);
+  backdrop-filter: var(--blur);
 }
 
 .v1-topbar-inner {
@@ -2000,12 +2000,11 @@ html[data-theme="dark"] .detail-button.is-primary:hover {
   justify-content: space-between;
   gap: 14px;
   margin-bottom: 12px;
+  padding: 16px;
   border: 1px solid var(--color-line);
   background:
     linear-gradient(135deg, color-mix(in srgb, var(--color-accent) 4%, color-mix(in srgb, var(--color-panel) 88%, transparent)), color-mix(in srgb, var(--color-panel) 85%, transparent) 50%);
-  --_blur: blur(10px) saturate(180%);
-  backdrop-filter: var(--_blur);
-  padding: 16px;
+  backdrop-filter: var(--blur) saturate(180%);
 }
 
 .admin-page-header h2 {
@@ -2353,8 +2352,7 @@ html[data-theme="dark"] .detail-button.is-primary:hover {
   align-items: center;
   border-bottom: 1px solid var(--color-line);
   background: color-mix(in srgb, var(--color-panel) 88%, transparent);
-  --_blur: blur(10px) saturate(180%);
-  backdrop-filter: var(--_blur);
+  backdrop-filter: var(--blur) saturate(180%);
   padding: 8px 12px;
   font-family: var(--font-plex-mono), monospace;
   font-size: 0.58rem;
@@ -2819,8 +2817,7 @@ html[data-theme="dark"] .detail-button.is-primary:hover {
   text-transform: uppercase;
   color: var(--color-muted);
   background: color-mix(in srgb, var(--color-panel) 88%, transparent);
-  --_blur: blur(10px) saturate(180%);
-  backdrop-filter: var(--_blur);
+  backdrop-filter: var(--blur) saturate(180%);
 }
 
 .list-row {
@@ -2870,8 +2867,7 @@ html[data-theme="dark"] .detail-button.is-primary:hover {
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.35);
-  --_blur: blur(14px) saturate(140%);
-  backdrop-filter: var(--_blur);
+  backdrop-filter: var(--blur) saturate(140%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -3164,7 +3160,6 @@ html[data-theme="dark"] .detail-button.is-primary:hover {
   .site-header {
     flex-wrap: wrap;
     padding: 12px;
-    backdrop-filter: var(--_blur);
   }
 
   .search-bar {
