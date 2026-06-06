@@ -754,6 +754,13 @@ html[data-theme="dark"] .promo-hero:hover {
   padding-top: 12px;
 }
 
+.load-more-error {
+  padding-top: 10px;
+  text-align: center;
+  font-size: 0.76rem;
+  color: var(--color-danger);
+}
+
 .load-more-row .button-secondary {
   gap: 8px;
   min-width: 160px;
@@ -3157,6 +3164,7 @@ html[data-theme="dark"] .detail-button.is-primary:hover {
   .site-header {
     flex-wrap: wrap;
     padding: 12px;
+    backdrop-filter: var(--_blur);
   }
 
   .search-bar {
