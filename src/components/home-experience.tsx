@@ -1,6 +1,7 @@
 "use client";
 
-import { startTransition, useDeferredValue, useState } from "react";
+import { useDeferredValue, useEffect, useRef, useState, useTransition } from "react";
+import { usePathname, useRouter } from "next/navigation";
 
 import { SiteHeader } from "@/components/site-header";
 import { SiteApplyDialog } from "@/components/site-apply-dialog";
@@ -31,53 +32,263 @@ type HomeExperienceProps = {
     featureImage?: string | null;
     description?: string | null;
   }>;
+  featuredItems: Array<{
+    id: number;
+    name: string;
+    href: string;
+    iconUrl?: string | null;
+    color: string;
+    categoryName: string;
+    categorySlug: string;
+    external?: boolean;
+    isFeatured?: boolean;
+    featureImage?: string | null;
+    description?: string | null;
+  }>;
   initialCategory: string;
   initialSearch: string;
   initialTheme: ThemeMode;
   pageSize: number;
-  featuredLimit: number;
+  totalItems: number;
   siteTitle: string;
   siteSubtitle: string;
 };
+
+const SEARCH_SYNC_DELAY_MS = 180;
+
+function buildHomeHref(pathname: string, category: string, search: string) {
+  const params = new URLSearchParams();
+
+  if (category && category !== "all") {
+    params.set("category", category);
+  }
+
+  if (search) {
+    params.set("q", search);
+  }
+
+  const query = params.toString();
+
+  return query ? `${pathname}?${query}` : pathname;
+}
+
+function buildHomeSitesApiHref(category: string, search: string, page: number, pageSize: number) {
+  const params = new URLSearchParams();
+
+  if (category && category !== "all") {
+    params.set("category", category);
+  }
+
+  if (search) {
+    params.set("q", search);
+  }
+
+  params.set("page", String(page));
+  params.set("pageSize", String(pageSize));
+
+  return `/api/home/sites?${params.toString()}`;
+}
+
+type HomeResultsProps = {
+  items: HomeExperienceProps["items"];
+  totalItems: number;
+  pageSize: number;
+  selectedCategory: string;
+  search: string;
+  initialCategory: string;
+  initialSearch: string;
+  isNavigating: boolean;
+  onCategorySelect: (categorySlug: string) => void;
+};
+
+function HomeResultsSkeleton() {
+  return (
+    <section className="link-cloud" aria-hidden="true">
+      <div className="home-results-skeleton">
+        {Array.from({ length: 20 }, (_, index) => (
+          <span key={index} className="home-results-skeleton-item" />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function HomeResults({
+  items,
+  totalItems,
+  pageSize,
+  selectedCategory,
+  search,
+  initialCategory,
+  initialSearch,
+  isNavigating,
+  onCategorySelect,
+}: HomeResultsProps) {
+  const [renderedItems, setRenderedItems] = useState(items);
+  const [renderedTotal, setRenderedTotal] = useState(totalItems);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [loadMoreError, setLoadMoreError] = useState("");
+  const isMountedRef = useRef(true);
+  const hasPendingFilterChange =
+    selectedCategory !== initialCategory || search.trim() !== initialSearch;
+  const hasMoreItems = renderedItems.length < renderedTotal;
+  const nextPage = Math.ceil(renderedItems.length / pageSize) + 1;
+
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
+  async function handleLoadMore() {
+    if (isLoadingMore || isNavigating || hasPendingFilterChange || !hasMoreItems) {
+      return;
+    }
+
+    setIsLoadingMore(true);
+    setLoadMoreError("");
+
+    try {
+      const response = await fetch(
+        buildHomeSitesApiHref(selectedCategory, search.trim(), nextPage, pageSize),
+        {
+          cache: "no-store",
+        },
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to load more items.");
+      }
+
+      const payload: {
+        total: number;
+        items: HomeExperienceProps["items"];
+      } = await response.json();
+
+      if (!isMountedRef.current) {
+        return;
+      }
+
+      setRenderedItems((currentItems) => {
+        const knownIds = new Set(currentItems.map((item) => item.id));
+        const nextItems = payload.items.filter((item) => !knownIds.has(item.id));
+
+        return currentItems.concat(nextItems);
+      });
+      setRenderedTotal(payload.total);
+    } catch {
+      if (isMountedRef.current) {
+        setLoadMoreError("加载更多失败，请重试。");
+      }
+    } finally {
+      if (isMountedRef.current) {
+        setIsLoadingMore(false);
+      }
+    }
+  }
+
+  if (isNavigating || hasPendingFilterChange) {
+    return <HomeResultsSkeleton />;
+  }
+
+  return (
+    <section className="link-cloud">
+      <SiteGrid
+        items={renderedItems}
+        onCategorySelect={onCategorySelect}
+      />
+      {loadMoreError ? (
+        <p className="load-more-error" role="status">
+          {loadMoreError}
+        </p>
+      ) : null}
+      {hasMoreItems ? (
+        <div className="load-more-row">
+          <button
+            className="button-secondary"
+            type="button"
+            onClick={handleLoadMore}
+            disabled={isLoadingMore || isNavigating || hasPendingFilterChange}
+          >
+            {isLoadingMore
+              ? "加载中..."
+              : isNavigating || hasPendingFilterChange
+                ? "筛选中..."
+                : "加载更多"}
+            <span>
+              {renderedItems.length}/{renderedTotal}
+            </span>
+          </button>
+        </div>
+      ) : null}
+    </section>
+  );
+}
 
 export function HomeExperience({
   categories,
   applyCategories,
   items,
+  featuredItems,
   initialCategory,
   initialSearch,
   initialTheme,
   pageSize,
-  featuredLimit,
+  totalItems,
   siteTitle,
   siteSubtitle,
 }: HomeExperienceProps) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const [isNavigating, startNavigation] = useTransition();
   const [selectedCategory, setSelectedCategory] = useState(initialCategory);
   const [search, setSearch] = useState(initialSearch);
-  const [loadState, setLoadState] = useState({ key: "", pages: 1 });
   const deferredSearch = useDeferredValue(search);
-  const keyword = deferredSearch.trim().toLowerCase();
-  const filterKey = `${selectedCategory}:${keyword}:${pageSize}`;
-  const loadedPages = loadState.key === filterKey ? loadState.pages : 1;
+  const skipNavigationRef = useRef(false);
+  const normalizedSearch = deferredSearch.trim();
+  const redirectTo = buildHomeHref(pathname, selectedCategory, search.trim());
 
-  const filteredItems = items.filter((item) => {
-    const matchesCategory =
-      selectedCategory === "all" || item.categorySlug === selectedCategory;
-    const matchesSearch =
-      !keyword ||
-      item.name.toLowerCase().includes(keyword) ||
-      item.categoryName.toLowerCase().includes(keyword) ||
-      item.description?.toLowerCase().includes(keyword);
+  useEffect(() => {
+    if (skipNavigationRef.current) {
+      skipNavigationRef.current = false;
+      return;
+    }
 
-    return matchesCategory && matchesSearch;
-  });
+    if (selectedCategory === initialCategory && normalizedSearch === initialSearch) {
+      return;
+    }
 
-  const featuredItems = filteredItems
-    .filter((item) => item.isFeatured)
-    .slice(0, featuredLimit);
-  const visibleCount = loadedPages * pageSize;
-  const visibleItems = filteredItems.slice(0, visibleCount);
-  const hasMoreItems = visibleCount < filteredItems.length;
+    const href = buildHomeHref(pathname, selectedCategory, normalizedSearch);
+    const timeoutId = window.setTimeout(() => {
+      startNavigation(() => {
+        router.replace(href, { scroll: false });
+      });
+    }, SEARCH_SYNC_DELAY_MS);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [
+    initialCategory,
+    initialSearch,
+    normalizedSearch,
+    pathname,
+    router,
+    selectedCategory,
+    startNavigation,
+  ]);
+
+  function handleCategoryChange(nextCategory: string) {
+    if (nextCategory === selectedCategory) {
+      return;
+    }
+
+    skipNavigationRef.current = true;
+    setSelectedCategory(nextCategory);
+    startNavigation(() => {
+      router.replace(buildHomeHref(pathname, nextCategory, search.trim()), { scroll: false });
+    });
+  }
 
   return (
     <>
@@ -85,6 +296,7 @@ export function HomeExperience({
         title={siteTitle}
         meta={[siteSubtitle]}
         initialTheme={initialTheme}
+        redirectTo={redirectTo}
       >
         <div className="search-bar">
           <input
@@ -105,9 +317,7 @@ export function HomeExperience({
             <button
               type="button"
               className={`cat-chip ${selectedCategory === "all" ? "active" : ""}`}
-              onClick={() => {
-                startTransition(() => setSelectedCategory("all"));
-              }}
+              onClick={() => handleCategoryChange("all")}
             >
               all
             </button>
@@ -116,9 +326,7 @@ export function HomeExperience({
                 key={category.id}
                 type="button"
                 className={`cat-chip ${selectedCategory === category.slug ? "active" : ""}`}
-                onClick={() => {
-                  startTransition(() => setSelectedCategory(category.slug));
-                }}
+                onClick={() => handleCategoryChange(category.slug)}
               >
                 <span
                   className="cat-chip-dot"
@@ -151,30 +359,18 @@ export function HomeExperience({
           </section>
         ) : null}
 
-        <section className="link-cloud">
-          <SiteGrid
-            items={visibleItems}
-            onCategorySelect={(categorySlug) => {
-              startTransition(() => setSelectedCategory(categorySlug));
-            }}
-          />
-          {hasMoreItems ? (
-            <div className="load-more-row">
-              <button
-                className="button-secondary"
-                type="button"
-                onClick={() => {
-                  setLoadState({ key: filterKey, pages: loadedPages + 1 });
-                }}
-              >
-                加载更多
-                <span>
-                  {visibleItems.length}/{filteredItems.length}
-                </span>
-              </button>
-            </div>
-          ) : null}
-        </section>
+        <HomeResults
+          key={`${initialCategory}:${initialSearch}:${pageSize}:${items.length}:${totalItems}`}
+          items={items}
+          totalItems={totalItems}
+          pageSize={pageSize}
+          selectedCategory={selectedCategory}
+          search={search}
+          initialCategory={initialCategory}
+          initialSearch={initialSearch}
+          isNavigating={isNavigating}
+          onCategorySelect={handleCategoryChange}
+        />
       </main>
     </>
   );

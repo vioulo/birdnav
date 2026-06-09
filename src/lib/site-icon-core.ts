@@ -422,28 +422,6 @@ async function extractManifestIcons(manifestUrl: string) {
     .filter((item): item is { href: string; score: number } => !!item);
 }
 
-function detectExtension(contentType: string, sourceUrl: string) {
-  const normalizedType = contentType.split(";")[0].trim().toLowerCase();
-  const mapped = ICON_CONTENT_TYPES.get(normalizedType);
-
-  if (mapped) {
-    return mapped;
-  }
-
-  try {
-    const pathname = new URL(sourceUrl).pathname;
-    const ext = pathname.split(".").pop()?.toLowerCase();
-
-    if (ext && ext.length <= 5) {
-      return ext;
-    }
-  } catch {
-    // Ignore parse failures and fall back to ico.
-  }
-
-  return "ico";
-}
-
 async function readLimitedBinary(response: Response) {
   const contentLength = Number(response.headers.get("content-length") || "0");
 

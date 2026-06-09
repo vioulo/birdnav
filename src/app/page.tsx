@@ -7,57 +7,28 @@ import {
   parseFooterLinks,
   type SiteClickBehavior,
 } from "@/lib/options";
-import { prisma } from "@/lib/prisma";
+import {
+  getHomeCategories,
+  getHomeFeaturedItems,
+  getHomeSitesPage,
+  readNonNegativeInteger,
+  readPositiveInteger,
+} from "@/services/sites/site-home-service";
 import { getThemeMode } from "@/lib/theme";
-import { appendUtmSource, extractUtmSource } from "@/lib/utils";
+import { extractUtmSource } from "@/lib/utils";
 
-type HomeSite = {
-  id: number;
-  name: string;
-  slug: string;
-  url: string;
-  iconUrl: string | null;
-  description: string | null;
-  featureImage: string | null;
-  isFeatured: boolean;
-};
-
-type HomeCategory = {
-  id: number;
-  name: string;
-  slug: string;
-  color: string;
-  sites: HomeSite[];
-};
-
-function readPositiveInteger(input: string, fallback: number, max: number) {
-  const value = Number.parseInt(input, 10);
-
-  if (!Number.isFinite(value) || value < 1) {
-    return fallback;
-  }
-
-  return Math.min(value, max);
-}
-
-function readNonNegativeInteger(input: string, fallback: number, max: number) {
-  const value = Number.parseInt(input, 10);
-
-  if (!Number.isFinite(value) || value < 0) {
-    return fallback;
-  }
-
-  return Math.min(value, max);
+function readQueryValue(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] || "" : value || "";
 }
 
 export default async function HomePage({
   searchParams,
 }: {
-  searchParams: Promise<{ category?: string; q?: string }>;
+  searchParams: Promise<{ category?: string | string[]; q?: string | string[] }>;
 }) {
   const params = await searchParams;
-  const selectedCategory = params.category?.trim() || "all";
-  const search = params.q?.trim() || "";
+  const selectedCategoryRaw = readQueryValue(params.category).trim() || "all";
+  const search = readQueryValue(params.q).trim();
   const headersList = await headers();
   const utmSource = extractUtmSource(headersList.get("host") || "");
 
@@ -71,38 +42,8 @@ export default async function HomePage({
     homePageSizeRaw,
     homeFeaturedLimitRaw,
     themeMode,
-  ]: [
-    HomeCategory[],
-    string,
-    string,
-    string,
-    string,
-    string,
-    string,
-    string,
-    Awaited<ReturnType<typeof getThemeMode>>,
   ] = await Promise.all([
-    prisma.category.findMany({
-      orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
-      include: {
-        sites: {
-          where: {
-            isPublished: true,
-          },
-          orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
-          select: {
-            id: true,
-            name: true,
-            slug: true,
-            url: true,
-            iconUrl: true,
-            description: true,
-            featureImage: true,
-            isFeatured: true,
-          },
-        },
-      },
-    }),
+    getHomeCategories(),
     getOptionValue("site.title"),
     getOptionValue("site.subtitle"),
     getOptionValue("footer.copyright"),
@@ -119,23 +60,30 @@ export default async function HomePage({
   const footerLinks = parseFooterLinks(footerLinksRaw);
   const homePageSize = readPositiveInteger(homePageSizeRaw, 100, 500);
   const homeFeaturedLimit = readNonNegativeInteger(homeFeaturedLimitRaw, 12, 100);
-  const visibleCategories = categories.filter((category) => category.sites.length > 0);
+  const knownCategorySlugs = new Set(categories.map((category) => category.slug));
+  const selectedCategory =
+    selectedCategoryRaw === "all" || knownCategorySlugs.has(selectedCategoryRaw)
+      ? selectedCategoryRaw
+      : "all";
+  const visibleCategories = categories.filter((category) => category.publishedSiteCount > 0);
 
-  const allItems = visibleCategories.flatMap((category) =>
-    category.sites.map((site) => ({
-      id: site.id,
-      name: site.name,
-      href: clickBehavior === "detail" ? `/site/${site.slug}` : appendUtmSource(site.url, utmSource),
-      iconUrl: site.iconUrl,
-      color: category.color,
-      categoryName: category.name,
-      categorySlug: category.slug,
-      external: clickBehavior === "direct",
-      isFeatured: site.isFeatured,
-      featureImage: site.featureImage,
-      description: site.description,
-    })),
-  );
+  const [{ items, total }, featuredItems] = await Promise.all([
+    getHomeSitesPage({
+      categorySlug: selectedCategory,
+      search,
+      page: 1,
+      pageSize: homePageSize,
+      clickBehavior,
+      utmSource,
+    }),
+    getHomeFeaturedItems({
+      categorySlug: selectedCategory,
+      search,
+      featuredLimit: homeFeaturedLimit,
+      clickBehavior,
+      utmSource,
+    }),
+  ]);
 
   return (
     <div className="flex min-h-screen flex-col text-foreground">
@@ -150,12 +98,13 @@ export default async function HomePage({
           id: category.id,
           name: category.name,
         }))}
-        items={allItems}
+        items={items}
+        featuredItems={featuredItems}
         initialCategory={selectedCategory}
         initialSearch={search}
         initialTheme={themeMode}
         pageSize={homePageSize}
-        featuredLimit={homeFeaturedLimit}
+        totalItems={total}
         siteTitle={siteTitle}
         siteSubtitle={siteSubtitle}
       />

@@ -737,6 +737,37 @@ html[data-theme="dark"] .promo-hero:hover {
   padding: 0;
 }
 
+.home-results-skeleton {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 6px;
+}
+
+.home-results-skeleton-item {
+  position: relative;
+  display: block;
+  height: 28px;
+  border: 1px solid color-mix(in srgb, var(--color-line) 88%, transparent);
+  background:
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--color-panel) 88%, transparent) 0%,
+      color-mix(in srgb, var(--color-accent) 10%, var(--color-panel)) 48%,
+      color-mix(in srgb, var(--color-panel) 88%, transparent) 100%
+    );
+  background-size: 220% 100%;
+  animation: home-skeleton-shimmer 1.1s ease-in-out infinite;
+}
+
+.home-results-skeleton-item::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 28px;
+  border-right: 1px solid color-mix(in srgb, var(--color-line) 86%, transparent);
+  background: color-mix(in srgb, var(--color-panel-elevated) 84%, transparent);
+}
+
 .links-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
@@ -770,6 +801,16 @@ html[data-theme="dark"] .promo-hero:hover {
   font-family: var(--font-plex-mono), monospace;
   font-size: 0.68rem;
   color: var(--color-muted);
+}
+
+@keyframes home-skeleton-shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+
+  100% {
+    background-position: -100% 0;
+  }
 }
 
 .link-pill-shell {
