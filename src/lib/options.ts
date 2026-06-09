@@ -1,3 +1,5 @@
+import { cache } from "react";
+
 import { prisma } from "@/lib/prisma";
 
 export const THEME_COOKIE = "birdnav_theme";
@@ -28,7 +30,7 @@ export function isSiteClickBehavior(value: string): value is SiteClickBehavior {
   return value === "detail" || value === "direct";
 }
 
-export async function getOptionsMap() {
+const loadOptionsMap = cache(async () => {
   try {
     const items = await prisma.option.findMany();
 
@@ -39,19 +41,17 @@ export async function getOptionsMap() {
   } catch {
     return {};
   }
+});
+
+export async function getOptionsMap() {
+  return loadOptionsMap();
 }
 
 export async function getOptionValue(key: keyof typeof defaultOptions | string, fallback?: string) {
-  try {
-    const option = await prisma.option.findUnique({
-      where: { optKey: key },
-    });
+  const options = await loadOptionsMap();
 
-    if (option?.optValue) {
-      return option.optValue;
-    }
-  } catch {
-    return fallback ?? defaultOptions[key as keyof typeof defaultOptions] ?? "";
+  if (options[key]) {
+    return options[key];
   }
 
   return fallback ?? defaultOptions[key as keyof typeof defaultOptions] ?? "";
