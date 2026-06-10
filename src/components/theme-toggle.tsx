@@ -256,7 +256,10 @@ export function ThemeToggle({ initialTheme = "dark", redirectTo = "/" }: ThemeTo
 
     const formData = new FormData();
     formData.set("theme", nextTheme);
-    formData.set("redirectTo", redirectTo);
+    formData.set(
+      "redirectTo",
+      redirectTo === "/" ? `${window.location.pathname}${window.location.search}` : redirectTo,
+    );
     const persistThemePromise = fetch("/theme", {
       method: "POST",
       headers: {

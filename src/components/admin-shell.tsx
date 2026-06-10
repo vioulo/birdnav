@@ -3,13 +3,11 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { getThemeMode } from "@/lib/theme";
 
 type AdminShellProps = {
-  currentPath: string;
   username: string;
   children: React.ReactNode;
 };
 
 export async function AdminShell({
-  currentPath,
   username,
   children,
 }: AdminShellProps) {
@@ -27,7 +25,7 @@ export async function AdminShell({
             </p>
             <div className="admin-sidebar-meta">
               <span className="status-chip">admin / {username}</span>
-              <ThemeToggle initialTheme={initialTheme} redirectTo={currentPath} />
+              <ThemeToggle initialTheme={initialTheme} />
             </div>
           </div>
           <AdminNav />

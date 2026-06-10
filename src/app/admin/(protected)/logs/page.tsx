@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { AdminPageHeader } from "@/components/admin-page-header";
 import { prisma } from "@/lib/prisma";
 
@@ -83,22 +85,22 @@ export default async function AdminLogsPage({
               显示 {skip + 1}-{Math.min(skip + PAGE_SIZE, total)} / {total}
             </p>
             <div className="pager-links">
-              <a
+              <Link
                 className={`button-secondary pager-link ${page <= 1 ? "is-disabled" : ""}`}
                 href={page > 1 ? buildLogsHref(page - 1) : buildLogsHref(1)}
                 aria-disabled={page <= 1}
                 tabIndex={page <= 1 ? -1 : undefined}
               >
                 上一页
-              </a>
-              <a
+              </Link>
+              <Link
                 className={`button-secondary pager-link ${page >= totalPages ? "is-disabled" : ""}`}
                 href={page < totalPages ? buildLogsHref(page + 1) : buildLogsHref(totalPages)}
                 aria-disabled={page >= totalPages}
                 tabIndex={page >= totalPages ? -1 : undefined}
               >
                 下一页
-              </a>
+              </Link>
             </div>
           </div>
         ) : null}

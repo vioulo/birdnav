@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useDeferredValue, useState } from "react";
 import { Search } from "lucide-react";
 
@@ -105,27 +106,45 @@ export function V1Experience({
                 </div>
                 <div className="v1-card-grid">
                   {category.sites.map((site) => (
-                    <a
-                      key={site.id}
-                      className="v1-card"
-                      href={site.href}
-                      target={site.external ? "_blank" : undefined}
-                      rel={site.external ? "noreferrer" : undefined}
-                    >
-                      <span className="v1-card-icon" aria-hidden="true">
-                        <SiteIcon
-                          src={site.iconUrl}
-                          label={site.name}
-                          alt={site.name}
-                          imgClassName=""
-                          fallbackClassName=""
-                        />
-                      </span>
-                      <span className="v1-card-text">
-                        <span className="v1-card-name">{site.name}</span>
-                        <span className="v1-card-sub">{site.description || site.url}</span>
-                      </span>
-                    </a>
+                    site.external ? (
+                      <a
+                        key={site.id}
+                        className="v1-card"
+                        href={site.href}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        <span className="v1-card-icon" aria-hidden="true">
+                          <SiteIcon
+                            src={site.iconUrl}
+                            label={site.name}
+                            alt={site.name}
+                            imgClassName=""
+                            fallbackClassName=""
+                          />
+                        </span>
+                        <span className="v1-card-text">
+                          <span className="v1-card-name">{site.name}</span>
+                          <span className="v1-card-sub">{site.description || site.url}</span>
+                        </span>
+                      </a>
+                    ) : (
+                      <Link key={site.id} className="v1-card" href={site.href}>
+                        <span className="v1-card-icon" aria-hidden="true">
+                          <SiteIcon
+                            src={site.iconUrl}
+                            label={site.name}
+                            alt={site.name}
+                            imgClassName=""
+                            fallbackClassName=""
+                          />
+                        </span>
+                        <span className="v1-card-text">
+                          <span className="v1-card-name">{site.name}</span>
+                          <span className="v1-card-sub">{site.description || site.url}</span>
+                        </span>
+                      </Link>
+                    )
                   ))}
                 </div>
               </section>

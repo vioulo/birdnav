@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useDeferredValue, useEffect, useRef, useState, useTransition } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
@@ -342,19 +343,33 @@ export function HomeExperience({
         {featuredItems.length ? (
           <section className="featured-stream">
             {featuredItems.map((item) => (
-              <a
-                key={item.id}
-                href={item.href}
-                className="featured-pill"
-                target={item.external ? "_blank" : undefined}
-                rel={item.external ? "noreferrer" : undefined}
-                title={item.description || item.categoryName}
-              >
-                <strong>{item.name}</strong>
-                <span className="featured-pill-desc">
-                  {item.description || "精选入口"}
-                </span>
-              </a>
+              item.external ? (
+                <a
+                  key={item.id}
+                  href={item.href}
+                  className="featured-pill"
+                  target="_blank"
+                  rel="noreferrer"
+                  title={item.description || item.categoryName}
+                >
+                  <strong>{item.name}</strong>
+                  <span className="featured-pill-desc">
+                    {item.description || "精选入口"}
+                  </span>
+                </a>
+              ) : (
+                <Link
+                  key={item.id}
+                  href={item.href}
+                  className="featured-pill"
+                  title={item.description || item.categoryName}
+                >
+                  <strong>{item.name}</strong>
+                  <span className="featured-pill-desc">
+                    {item.description || "精选入口"}
+                  </span>
+                </Link>
+              )
             ))}
           </section>
         ) : null}

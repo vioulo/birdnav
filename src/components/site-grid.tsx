@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { SiteIcon } from "@/components/site-icon";
 type SiteGridProps = {
   onCategorySelect: (categorySlug: string) => void;
@@ -22,24 +24,42 @@ export function SiteGrid({ onCategorySelect, items }: SiteGridProps) {
       {items.length ? (
         items.map((item) => (
           <div key={item.id} className="link-pill-shell">
-            <a
-              href={item.href}
-              className="link-pill"
-              target={item.external ? "_blank" : undefined}
-              rel={item.external ? "noreferrer" : undefined}
-              title={`${item.categoryName}${item.description ? ` · ${item.description}` : ""}`}
-            >
-              <span className="link-pill-icon" aria-hidden="true">
-                <SiteIcon
-                  src={item.iconUrl}
-                  label={item.name}
-                  imgClassName="link-pill-icon-image"
-                  fallbackClassName="link-pill-icon-fallback"
-                />
-              </span>
-              <span className="link-pill-name">{item.name}</span>
-              {item.external ? <span className="link-pill-arrow">↗</span> : null}
-            </a>
+            {item.external ? (
+              <a
+                href={item.href}
+                className="link-pill"
+                target="_blank"
+                rel="noreferrer"
+                title={`${item.categoryName}${item.description ? ` · ${item.description}` : ""}`}
+              >
+                <span className="link-pill-icon" aria-hidden="true">
+                  <SiteIcon
+                    src={item.iconUrl}
+                    label={item.name}
+                    imgClassName="link-pill-icon-image"
+                    fallbackClassName="link-pill-icon-fallback"
+                  />
+                </span>
+                <span className="link-pill-name">{item.name}</span>
+                <span className="link-pill-arrow">↗</span>
+              </a>
+            ) : (
+              <Link
+                href={item.href}
+                className="link-pill"
+                title={`${item.categoryName}${item.description ? ` · ${item.description}` : ""}`}
+              >
+                <span className="link-pill-icon" aria-hidden="true">
+                  <SiteIcon
+                    src={item.iconUrl}
+                    label={item.name}
+                    imgClassName="link-pill-icon-image"
+                    fallbackClassName="link-pill-icon-fallback"
+                  />
+                </span>
+                <span className="link-pill-name">{item.name}</span>
+              </Link>
+            )}
             <button
               type="button"
               className="link-pill-filter"
