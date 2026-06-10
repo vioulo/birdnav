@@ -77,16 +77,6 @@ function buildHomeSiteWhere(params: Pick<HomeSiteQueryParams, "categorySlug" | "
 function getHomeSiteOrderBy(): Prisma.SiteOrderByWithRelationInput[] {
   return [
     {
-      category: {
-        sortOrder: "asc",
-      },
-    },
-    {
-      category: {
-        id: "asc",
-      },
-    },
-    {
       sortOrder: "asc",
     },
     {
